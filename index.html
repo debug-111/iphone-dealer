@@ -10,7 +10,9 @@
         body.dark { background: linear-gradient(135deg, #0a0f1a 0%, #0f1724 100%); color: #e2e8f0; }
         body.dark .level-card, body.dark .market-item, body.dark .phone-card, body.dark .offers-modal,
         body.dark .profile-content, body.dark .nickname-modal, body.dark .shop-modal, body.dark .fullscreen-modal,
-        body.dark .leaderboard-item, body.dark .task-item { background: #1e293b; color: #e2e8f0; }
+        body.dark .leaderboard-item, body.dark .task-item, body.dark .friend-item, body.dark .admin-panel {
+            background: #1e293b; color: #e2e8f0;
+        }
         body.dark .tab-btn { background: #1e293b; color: #94a3b8; }
         body.dark .tab-btn.active { background: linear-gradient(135deg, #f39c12, #e67e22); color: white; }
         body.dark .condition-badge { background: #0f1724; color: #e2e8f0; }
@@ -64,7 +66,7 @@
         .drawer-item:active { background: rgba(0,0,0,0.1); transform: scale(0.97); }
         
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 2000; animation: fadeIn 0.2s; }
-        .fullscreen-modal { background: white; border-radius: 32px 32px 0 0; width: 100%; max-width: 550px; height: 85vh; display: flex; flex-direction: column; animation: slideUp 0.2s; overflow: hidden; position: fixed; bottom: 0; left: 0; right: 0; margin: auto; top: auto; border-radius: 28px 28px 0 0; }
+        .fullscreen-modal { background: white; border-radius: 32px 32px 0 0; width: 100%; max-width: 550px; height: 90vh; display: flex; flex-direction: column; animation: slideUp 0.2s; overflow: hidden; position: fixed; bottom: 0; left: 0; right: 0; margin: auto; top: auto; border-radius: 28px 28px 0 0; }
         .fullscreen-header { padding: 16px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: inherit; z-index: 10; }
         .fullscreen-body { flex: 1; overflow-y: auto; padding: 16px; }
         
@@ -85,7 +87,15 @@
         .code-input { flex: 1; padding: 10px; border-radius: 40px; border: 1px solid #ccc; font-family: monospace; background: white; color: black; }
         body.dark .code-input { background: #0f1724; color: white; border-color: #334155; }
         
-        /* Красивое модальное окно для ввода имени */
+        /* Админ-панель */
+        .admin-panel { background: white; border-radius: 48px; padding: 24px; width: 90%; max-width: 400px; max-height: 85vh; overflow-y: auto; }
+        .admin-section { margin: 16px 0; padding: 12px; background: #f0f2f5; border-radius: 24px; }
+        body.dark .admin-section { background: #0f1724; }
+        .admin-input { flex: 1; padding: 10px; border-radius: 40px; border: 1px solid #ccc; margin: 5px 0; }
+        .admin-btn { background: #9b59b6; border: none; padding: 10px; border-radius: 40px; color: white; font-weight: bold; margin: 5px; cursor: pointer; }
+        .danger-btn { background: #e74c3c; }
+        .success-btn { background: #2ecc71; }
+        
         .welcome-modal { background: white; border-radius: 48px; padding: 32px 24px; width: 90%; max-width: 340px; text-align: center; animation: slideUp 0.3s ease; }
         body.dark .welcome-modal { background: #1e293b; }
         .welcome-modal h2 { margin-bottom: 16px; font-size: 1.8rem; }
@@ -150,6 +160,9 @@
     
     let userNickname = "";
     let friendsList = [];
+    let isAdmin = false;
+    let cachedLeaderboard = [];
+    let lastFetch = 0;
     
     // ========== БАЗА УСТРОЙСТВ ==========
     const DEVICES_DB = [
@@ -171,7 +184,7 @@
     const COND_MOD = { "Бит экран": 0.45, "Хорошее": 0.85, "Идеальное": 1.3 };
     const COND_COLORS = { "Бит экран": "#e74c3c", "Хорошее": "#2ecc71", "Идеальное": "#3498db" };
     
-    // ========== ВСЕ КОДЫ ==========
+    // ========== СЕКРЕТНЫЕ КОДЫ ==========
     const SECRET_CODES = {
         "5000": { money: 5000, msg: "5000 ₽ зачислено!" },
         "10000": { money: 10000, msg: "10000 ₽ зачислено!" },
@@ -187,7 +200,8 @@
         "DISCOUNT20": { discount: 20, msg: "Скидка 20% на всё!" },
         "FREEIPAD": { device: { model: "iPad Pro", condition: "Идеальное", buyPrice: 0, brokenPart: null }, msg: "iPad Pro бесплатно!" },
         "WELCOME2025": { money: 15000, exp: 50, msg: "15 000 ₽ + 50 опыта!" },
-        "HAPPYDEAL": { money: 100000, msg: "100 000 ₽!" }
+        "HAPPYDEAL": { money: 100000, msg: "100 000 ₽!" },
+        "ADMIN123": { admin: true, msg: "👑 Админ-панель разблокирована!" }
     };
     
     let game = { money: 5000, exp: 0, level: 1, inventory: [{ model: "iPhone 6", condition: "Бит экран", buyPrice: 1800, brokenPart: "Экран" }], parts: [], totalSales: 0, totalProfit: 0, discount: 0 };
@@ -246,7 +260,7 @@
         document.getElementById("closeFriends").addEventListener("click", () => modal.remove());
     }
     
-    // ========== ЛИДЕРБОРД (ЧЕРЕЗ GOOGLE TABLES) ==========
+    // ========== ЛИДЕРБОРД (с кэшем для скорости) ==========
     async function sendToLeaderboard() {
         try {
             await fetch(LEADERBOARD_URL, {
@@ -259,24 +273,56 @@
                     level: game.level
                 })
             });
+            // Очищаем кэш после отправки
+            cachedLeaderboard = [];
+            lastFetch = 0;
         } catch(e) { console.log(e); }
     }
     
-    async function fetchLeaderboard() {
+    async function fetchLeaderboard(force = false) {
+        // Кэшируем на 10 секунд для быстрого открытия
+        if (!force && lastFetch > Date.now() - 10000 && cachedLeaderboard.length > 0) {
+            return cachedLeaderboard;
+        }
         try {
             const response = await fetch(LEADERBOARD_URL + "?t=" + Date.now());
             const data = await response.json();
             let leaderboard = data.leaderboard || [];
             leaderboard.sort((a, b) => b.profit - a.profit);
-            return leaderboard.slice(0, 50);
-        } catch(e) { return []; }
+            cachedLeaderboard = leaderboard.slice(0, 50);
+            lastFetch = Date.now();
+            return cachedLeaderboard;
+        } catch(e) { return cachedLeaderboard.length > 0 ? cachedLeaderboard : []; }
+    }
+    
+    // ОБНУЛЕНИЕ ЛИДЕРБОРДА (только для админа)
+    async function resetLeaderboard() {
+        if (!isAdmin) return;
+        try {
+            // Отправляем запрос на сброс через Google Scripts
+            await fetch(LEADERBOARD_URL + "?reset=true", { method: "GET", mode: "no-cors" });
+            cachedLeaderboard = [];
+            lastFetch = 0;
+            showToast("🏆 Лидерборд ОБНУЛЕН!", "#f39c12");
+        } catch(e) { showToast("❌ Ошибка сброса!", "#e74c3c"); }
+    }
+    
+    // УДАЛЕНИЕ ИГРОКА ИЗ ЛИДЕРБОРДА
+    async function deletePlayerFromLeaderboard(username) {
+        if (!isAdmin) return;
+        try {
+            await fetch(LEADERBOARD_URL + "?delete=" + encodeURIComponent(username), { method: "GET", mode: "no-cors" });
+            cachedLeaderboard = [];
+            lastFetch = 0;
+            showToast(`✅ Игрок ${username} удалён!`, "#2ecc71");
+        } catch(e) { showToast("❌ Ошибка удаления!", "#e74c3c"); }
     }
     
     async function showGlobalLeaderboardModal() {
         const leaderboard = await fetchLeaderboard();
         let modal = document.createElement("div");
         modal.className = "modal-overlay";
-        modal.innerHTML = `<div class="fullscreen-modal"><div class="fullscreen-header"><h3>🏆 ГЛОБАЛЬНЫЙ ЛИДЕРБОРД 🏆</h3><button id="closeLeaderboard" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body" id="leaderboardBody"></div></div>`;
+        modal.innerHTML = `<div class="fullscreen-modal"><div class="fullscreen-header"><h3>🏆 ГЛОБАЛЬНЫЙ ЛИДЕРБОРД 🏆</h3><button id="closeLeaderboard" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body" id="leaderboardBody"><div style="text-align:center;padding:20px;">🏆 Загрузка...</div></div></div>`;
         document.body.appendChild(modal);
         
         let html = `<div style="margin-bottom: 16px; text-align:center; font-weight:bold;">🌍 ТОП-50 ПЕРЕКУПОВ 🌍</div>`;
@@ -299,6 +345,7 @@
                             <div class="leaderboard-level">⭐ ${player.level}</div>
                             ${player.username !== userNickname && !friendsList.includes(player.username) ? `<button class="add-friend-lb" data-user="${player.username}" style="background:#2ecc71;border:none;padding:4px 10px;border-radius:30px;color:white;font-size:0.7rem;">➕</button>` : ''}
                             ${friendsList.includes(player.username) ? `<span style="color:#2ecc71;font-size:0.7rem;">✓ Друг</span>` : ''}
+                            ${isAdmin ? `<button class="admin-delete-lb" data-user="${player.username}" style="background:#e74c3c;border:none;padding:4px 10px;border-radius:30px;color:white;font-size:0.7rem;margin-left:5px;">🗑️</button>` : ''}
                         </div>`;
             });
         }
@@ -312,7 +359,75 @@
                 showToast(`✅ ${btn.dataset.user} добавлен в друзья!`, "#2ecc71");
             });
         });
+        document.querySelectorAll(".admin-delete-lb").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                if (confirm(`Удалить игрока ${btn.dataset.user} из лидерборда?`)) {
+                    deletePlayerFromLeaderboard(btn.dataset.user);
+                    modal.remove();
+                    setTimeout(() => showGlobalLeaderboardModal(), 500);
+                }
+            });
+        });
         document.getElementById("closeLeaderboard").addEventListener("click", () => modal.remove());
+    }
+    
+    // ========== АДМИН-ПАНЕЛЬ ==========
+    function showAdminPanel() {
+        if (!isAdmin) return;
+        let modal = document.createElement("div");
+        modal.className = "modal-overlay";
+        modal.innerHTML = `<div class="admin-panel">
+            <h2>👑 АДМИН-ПАНЕЛЬ</h2>
+            <div class="admin-section">
+                <h3>💰 БАЛАНС</h3>
+                <input type="number" id="adminMoney" class="admin-input" placeholder="Сумма">
+                <button id="addMoneyBtn" class="admin-btn success-btn">➕ Добавить деньги</button>
+                <button id="setMoneyBtn" class="admin-btn">💵 Установить баланс</button>
+            </div>
+            <div class="admin-section">
+                <h3>⭐ ОПЫТ</h3>
+                <input type="number" id="adminExp" class="admin-input" placeholder="Опыт">
+                <button id="addExpBtn" class="admin-btn success-btn">➕ Добавить опыт</button>
+            </div>
+            <div class="admin-section">
+                <h3>🏆 УПРАВЛЕНИЕ ЛИДЕРБОРДОМ</h3>
+                <button id="resetLeaderboardBtn" class="admin-btn danger-btn">🗑️ ОБНУЛИТЬ ВЕСЬ ЛИДЕРБОРД</button>
+                <button id="refreshLeaderboardBtn" class="admin-btn">🔄 Обновить лидерборд</button>
+            </div>
+            <div class="admin-section">
+                <h3>📱 УПРАВЛЕНИЕ ИГРОКАМИ</h3>
+                <input type="text" id="adminPlayerName" class="admin-input" placeholder="Ник игрока">
+                <button id="deletePlayerBtn" class="admin-btn danger-btn">❌ Удалить игрока</button>
+            </div>
+            <button id="closeAdmin" class="close-btn">ЗАКРЫТЬ</button>
+        </div>`;
+        document.body.appendChild(modal);
+        
+        document.getElementById("addMoneyBtn").onclick = () => {
+            let amount = parseInt(document.getElementById("adminMoney").value);
+            if (amount) { game.money += amount; game.totalProfit += amount; updateUI(); saveGame(); showToast(`+${amount} ₽`, "#2ecc71"); }
+        };
+        document.getElementById("setMoneyBtn").onclick = () => {
+            let amount = parseInt(document.getElementById("adminMoney").value);
+            if (amount) { game.money = amount; updateUI(); saveGame(); showToast(`Баланс установлен: ${amount} ₽`, "#2ecc71"); }
+        };
+        document.getElementById("addExpBtn").onclick = () => {
+            let amount = parseInt(document.getElementById("adminExp").value);
+            if (amount) { addExp(amount); showToast(`+${amount} опыта`, "#f39c12"); }
+        };
+        document.getElementById("resetLeaderboardBtn").onclick = () => {
+            if (confirm("Точно обнулить весь лидерборд? Это действие необратимо!")) resetLeaderboard();
+        };
+        document.getElementById("refreshLeaderboardBtn").onclick = async () => {
+            await fetchLeaderboard(true);
+            showToast("Лидерборд обновлён!", "#2ecc71");
+        };
+        document.getElementById("deletePlayerBtn").onclick = () => {
+            let username = document.getElementById("adminPlayerName").value.trim();
+            if (username && confirm(`Удалить игрока ${username}?`)) deletePlayerFromLeaderboard(username);
+        };
+        document.getElementById("closeAdmin").onclick = () => modal.remove();
     }
     
     // ========== КОДЫ ==========
@@ -325,6 +440,11 @@
             let code = document.getElementById("codeInput").value.trim().toUpperCase();
             if (SECRET_CODES[code]) {
                 const reward = SECRET_CODES[code];
+                if (reward.admin) {
+                    isAdmin = true;
+                    showToast(`👑 ${reward.msg}`, "#9b59b6");
+                    showAdminPanel();
+                }
                 if (reward.money) { game.money += reward.money; showMoneyAnimation(reward.money); game.totalProfit += reward.money; }
                 if (reward.exp) addExp(reward.exp);
                 if (reward.device) game.inventory.push(reward.device);
@@ -374,9 +494,9 @@
     function renderSpareMarket() { let container = document.getElementById("spareMarketGrid"); if (!container) return; container.innerHTML = ""; currentSpareMarket.forEach(part => { let card = document.createElement("div"); card.className = "market-item"; card.innerHTML = `<div style="font-size:1.5rem;">🔧</div><div style="font-weight:bold;font-size:0.8rem;">${part.partType}</div><div style="font-size:0.7rem;">для ${part.phoneModel}</div><div class="price-tag">${part.price.toLocaleString()} ₽</div><button class="buy-btn">💸 КУПИТЬ</button>`; card.querySelector(".buy-btn").addEventListener("click", (e) => { e.stopPropagation(); buySparePart(part); }); container.appendChild(card); }); }
     function updateUI() { document.getElementById("balance").innerText = Math.floor(game.money).toLocaleString(); renderInventory(); renderMarket(); renderSpareMarket(); updateExpUI(); }
     
-    function showProfile() { let modal = document.createElement("div"); modal.className = "modal-overlay"; modal.innerHTML = `<div class="profile-content" style="max-width:340px;width:90%;background:white;border-radius:48px;padding:24px;"><div class="profile-header"><div style="font-size:4rem;background:linear-gradient(135deg,#f39c12,#e67e22);width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">👨‍💼</div><h2>${userNickname || "Мастер"}</h2><p>⭐ Уровень ${game.level} • ${game.totalSales} продаж</p></div><div class="profile-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><div class="stat-card" style="background:#f0f2f5;border-radius:20px;padding:10px;text-align:center;"><div class="stat-value">${Math.floor(game.money).toLocaleString()}₽</div><div class="stat-label">БАЛАНС</div></div><div class="stat-card" style="background:#f0f2f5;border-radius:20px;padding:10px;text-align:center;"><div class="stat-value">${game.totalProfit.toLocaleString()}₽</div><div class="stat-label">ПРИБЫЛЬ</div></div><div class="stat-card" style="background:#f0f2f5;border-radius:20px;padding:10px;text-align:center;"><div class="stat-value">${game.inventory.length}</div><div class="stat-label">УСТРОЙСТВ</div></div></div><button id="closeProfile" class="close-btn">ЗАКРЫТЬ</button></div>`; document.body.appendChild(modal); document.getElementById("closeProfile").addEventListener("click", () => modal.remove()); }
+    function showProfile() { let modal = document.createElement("div"); modal.className = "modal-overlay"; modal.innerHTML = `<div class="profile-content" style="max-width:340px;width:90%;background:white;border-radius:48px;padding:24px;"><div class="profile-header"><div style="font-size:4rem;background:linear-gradient(135deg,#f39c12,#e67e22);width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">👨‍💼</div><h2>${userNickname || "Мастер"}</h2><p>⭐ Уровень ${game.level} • ${game.totalSales} продаж</p>${isAdmin ? '<p style="color:#9b59b6;">👑 АДМИН</p>' : ''}</div><div class="profile-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><div class="stat-card" style="background:#f0f2f5;border-radius:20px;padding:10px;text-align:center;"><div class="stat-value">${Math.floor(game.money).toLocaleString()}₽</div><div class="stat-label">БАЛАНС</div></div><div class="stat-card" style="background:#f0f2f5;border-radius:20px;padding:10px;text-align:center;"><div class="stat-value">${game.totalProfit.toLocaleString()}₽</div><div class="stat-label">ПРИБЫЛЬ</div></div><div class="stat-card" style="background:#f0f2f5;border-radius:20px;padding:10px;text-align:center;"><div class="stat-value">${game.inventory.length}</div><div class="stat-label">УСТРОЙСТВ</div></div></div>${isAdmin ? '<button id="adminPanelBtn" class="admin-btn" style="width:100%;margin-top:12px;">👑 ОТКРЫТЬ АДМИН-ПАНЕЛЬ</button>' : ''}<button id="closeProfile" class="close-btn">ЗАКРЫТЬ</button></div>`; document.body.appendChild(modal); if (isAdmin) document.getElementById("adminPanelBtn")?.addEventListener("click", () => { modal.remove(); showAdminPanel(); }); document.getElementById("closeProfile").addEventListener("click", () => modal.remove()); }
     function resetGameWithConfirm() { let modal = document.createElement("div"); modal.className = "modal-overlay"; modal.innerHTML = `<div class="offers-modal" style="max-width:340px;"><h2>⚠️ ВНИМАНИЕ!</h2><p>Сбросить прогресс?</p><div style="display:flex;gap:12px;margin-top:20px;"><button id="confirmReset" style="background:#e74c3c;flex:1;padding:12px;border-radius:40px;">ДА</button><button id="cancelReset" style="background:#95a5a6;flex:1;padding:12px;border-radius:40px;">НЕТ</button></div></div>`; document.body.appendChild(modal); document.getElementById("confirmReset").addEventListener("click", () => { resetGame(); modal.remove(); }); document.getElementById("cancelReset").addEventListener("click", () => modal.remove()); }
-    function resetGame() { game = { money: 5000, exp: 0, level: 1, inventory: [{ model: "iPhone 6", condition: "Бит экран", buyPrice: 1800, brokenPart: "Экран" }], parts: [], totalSales: 0, totalProfit: 0, discount: 0 }; usedCodes.clear(); friendsList = []; recalcLevel(); currentMarket = generateMarket(); currentSpareMarket = generateSpareMarket(); updateUI(); showToast("Прогресс сброшен!", "#e74c3c"); saveGame(); saveFriends(); }
+    function resetGame() { game = { money: 5000, exp: 0, level: 1, inventory: [{ model: "iPhone 6", condition: "Бит экран", buyPrice: 1800, brokenPart: "Экран" }], parts: [], totalSales: 0, totalProfit: 0, discount: 0 }; usedCodes.clear(); friendsList = []; isAdmin = false; recalcLevel(); currentMarket = generateMarket(); currentSpareMarket = generateSpareMarket(); updateUI(); showToast("Прогресс сброшен!", "#e74c3c"); saveGame(); saveFriends(); }
     
     function showDailyModal() { showToast("📅 Ежедневные задания скоро!", "#f39c12"); }
     function showPassModal() { showToast("🎫 Перекуп Pass скоро!", "#f39c12"); }
@@ -385,7 +505,6 @@
     function initDrawer() { let overlay = document.getElementById("drawerOverlay"); let drawer = document.getElementById("drawerMenu"); document.getElementById("menuBtn").addEventListener("click", () => { overlay.style.display = "block"; drawer.classList.add("open"); }); overlay.addEventListener("click", () => { overlay.style.display = "none"; drawer.classList.remove("open"); }); document.querySelectorAll(".drawer-item").forEach(item => { item.addEventListener("click", () => { overlay.style.display = "none"; drawer.classList.remove("open"); let action = item.dataset.action; if (action === "daily") showDailyModal(); if (action === "pass") showPassModal(); if (action === "shop") showShopModal(); if (action === "codes") showCodesModal(); if (action === "theme") { document.body.classList.toggle("dark"); saveGame(); } if (action === "reset") resetGameWithConfirm(); }); }); }
     function initTabs() { document.querySelectorAll(".tab-btn").forEach(btn => { btn.addEventListener("click", () => { let tab = btn.dataset.tab; document.querySelectorAll(".section").forEach(sec => sec.classList.remove("active")); document.getElementById(`${tab}Section`).classList.add("active"); document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active")); btn.classList.add("active"); if (tab === "market") { currentMarket = generateMarket(); renderMarket(); } if (tab === "spareMarket") { currentSpareMarket = generateSpareMarket(); renderSpareMarket(); } }); }); }
     
-    // КРАСИВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ ВВОДА НИКА
     function showNicknameModal() { 
         let modal = document.createElement("div"); 
         modal.className = "modal-overlay"; 
