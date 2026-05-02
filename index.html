@@ -87,14 +87,23 @@
         .code-input { flex: 1; padding: 10px; border-radius: 40px; border: 1px solid #ccc; font-family: monospace; background: white; color: black; }
         body.dark .code-input { background: #0f1724; color: white; border-color: #334155; }
         
-        /* Админ-панель */
-        .admin-panel { background: white; border-radius: 48px; padding: 24px; width: 90%; max-width: 400px; max-height: 85vh; overflow-y: auto; }
-        .admin-section { margin: 16px 0; padding: 12px; background: #f0f2f5; border-radius: 24px; }
+        /* Админ-панель на весь экран */
+        .admin-panel { background: white; border-radius: 32px 32px 0 0; width: 100%; height: 90vh; display: flex; flex-direction: column; overflow: hidden; position: fixed; bottom: 0; left: 0; right: 0; margin: auto; top: auto; border-radius: 28px 28px 0 0; animation: slideUp 0.2s; }
+        .admin-header { padding: 16px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: inherit; }
+        .admin-body { flex: 1; overflow-y: auto; padding: 16px; }
+        .admin-section { margin: 16px 0; padding: 16px; background: #f0f2f5; border-radius: 24px; }
         body.dark .admin-section { background: #0f1724; }
-        .admin-input { flex: 1; padding: 10px; border-radius: 40px; border: 1px solid #ccc; margin: 5px 0; }
-        .admin-btn { background: #9b59b6; border: none; padding: 10px; border-radius: 40px; color: white; font-weight: bold; margin: 5px; cursor: pointer; }
+        .admin-input { flex: 1; padding: 10px; border-radius: 40px; border: 1px solid #ccc; margin: 5px; background: white; }
+        body.dark .admin-input { background: #1e293b; border-color: #334155; color: white; }
+        .admin-btn { background: #9b59b6; border: none; padding: 8px 16px; border-radius: 40px; color: white; font-weight: bold; margin: 5px; cursor: pointer; }
         .danger-btn { background: #e74c3c; }
         .success-btn { background: #2ecc71; }
+        .warning-btn { background: #f39c12; color: #1a1a2e; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .stat-card { background: white; border-radius: 20px; padding: 12px; text-align: center; }
+        body.dark .stat-card { background: #1e293b; }
+        .stat-value { font-size: 1.5rem; font-weight: bold; }
+        .log-item { padding: 6px; border-bottom: 1px solid #ddd; font-size: 0.8rem; }
         
         .welcome-modal { background: white; border-radius: 48px; padding: 32px 24px; width: 90%; max-width: 340px; text-align: center; animation: slideUp 0.3s ease; }
         body.dark .welcome-modal { background: #1e293b; }
@@ -163,6 +172,8 @@
     let isAdmin = false;
     let cachedLeaderboard = [];
     let lastFetch = 0;
+    let adminLogs = [];
+    let bannedPlayers = new Set();
     
     // ========== БАЗА УСТРОЙСТВ ==========
     const DEVICES_DB = [
@@ -201,12 +212,52 @@
         "FREEIPAD": { device: { model: "iPad Pro", condition: "Идеальное", buyPrice: 0, brokenPart: null }, msg: "iPad Pro бесплатно!" },
         "WELCOME2025": { money: 15000, exp: 50, msg: "15 000 ₽ + 50 опыта!" },
         "HAPPYDEAL": { money: 100000, msg: "100 000 ₽!" },
-        "ADMIN123": { admin: true, msg: "👑 Админ-панель разблокирована!" }
+        "ADMIN777": { admin: true, msg: "👑 Админ-панель разблокирована!" }
     };
     
     let game = { money: 5000, exp: 0, level: 1, inventory: [{ model: "iPhone 6", condition: "Бит экран", buyPrice: 1800, brokenPart: "Экран" }], parts: [], totalSales: 0, totalProfit: 0, discount: 0 };
     let currentMarket = [], currentSpareMarket = [];
     let usedCodes = new Set();
+    
+    // ========== ЛОГИ ==========
+    function addLog(action, details) {
+        const log = { time: new Date().toLocaleTimeString(), action, details, user: userNickname };
+        adminLogs.unshift(log);
+        if (adminLogs.length > 100) adminLogs.pop();
+        localStorage.setItem("adminLogs", JSON.stringify(adminLogs));
+    }
+    
+    function loadLogs() {
+        const saved = localStorage.getItem("adminLogs");
+        if (saved) adminLogs = JSON.parse(saved);
+    }
+    
+    // ========== БАН ==========
+    function loadBannedPlayers() {
+        const saved = localStorage.getItem("bannedPlayers");
+        if (saved) bannedPlayers = new Set(JSON.parse(saved));
+    }
+    
+    function saveBannedPlayers() {
+        localStorage.setItem("bannedPlayers", JSON.stringify(Array.from(bannedPlayers)));
+    }
+    
+    function banPlayer(username) {
+        bannedPlayers.add(username);
+        saveBannedPlayers();
+        addLog("🔨 БАН", `Игрок ${username} забанен`);
+        showToast(`✅ Игрок ${username} ЗАБАНЕН!`, "#e74c3c");
+        if (username === userNickname) {
+            setTimeout(() => { resetGame(); showToast("❌ ВЫ ЗАБАНЕНЫ АДМИНИСТРАТОРОМ!", "#e74c3c"); }, 500);
+        }
+    }
+    
+    function unbanPlayer(username) {
+        bannedPlayers.delete(username);
+        saveBannedPlayers();
+        addLog("🔓 РАЗБАН", `Игрок ${username} разбанен`);
+        showToast(`✅ Игрок ${username} разбанен!`, "#2ecc71");
+    }
     
     // ========== ДРУЗЬЯ ==========
     function saveFriends() { localStorage.setItem("friendsList", JSON.stringify(friendsList)); }
@@ -219,6 +270,7 @@
         friendsList.push(toUser);
         saveFriends();
         updateFriendsBtn();
+        addLog("👥 ДРУГ", `Добавлен друг: ${toUser}`);
         showToast(`✅ ${toUser} добавлен в друзья!`, "#2ecc71");
     }
     
@@ -260,66 +312,74 @@
         document.getElementById("closeFriends").addEventListener("click", () => modal.remove());
     }
     
-    // ========== ЛИДЕРБОРД (с кэшем для скорости) ==========
+    // ========== ЛИДЕРБОРД ==========
     async function sendToLeaderboard() {
+        if (bannedPlayers.has(userNickname)) return;
         try {
             await fetch(LEADERBOARD_URL, {
                 method: "POST",
                 mode: "no-cors",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    username: userNickname,
-                    profit: game.totalProfit,
-                    level: game.level
-                })
+                body: JSON.stringify({ username: userNickname, profit: game.totalProfit, level: game.level })
             });
-            // Очищаем кэш после отправки
             cachedLeaderboard = [];
             lastFetch = 0;
-        } catch(e) { console.log(e); }
+        } catch(e) {}
     }
     
     async function fetchLeaderboard(force = false) {
-        // Кэшируем на 10 секунд для быстрого открытия
-        if (!force && lastFetch > Date.now() - 10000 && cachedLeaderboard.length > 0) {
-            return cachedLeaderboard;
+        if (force || lastFetch < Date.now() - 5000 || cachedLeaderboard.length === 0) {
+            try {
+                const response = await fetch(LEADERBOARD_URL + "?t=" + Date.now());
+                const data = await response.json();
+                let leaderboard = data.leaderboard || [];
+                leaderboard = leaderboard.filter(p => !bannedPlayers.has(p.username));
+                leaderboard.sort((a, b) => b.profit - a.profit);
+                cachedLeaderboard = leaderboard.slice(0, 50);
+                lastFetch = Date.now();
+            } catch(e) {
+                if (cachedLeaderboard.length === 0) cachedLeaderboard = [];
+            }
         }
-        try {
-            const response = await fetch(LEADERBOARD_URL + "?t=" + Date.now());
-            const data = await response.json();
-            let leaderboard = data.leaderboard || [];
-            leaderboard.sort((a, b) => b.profit - a.profit);
-            cachedLeaderboard = leaderboard.slice(0, 50);
-            lastFetch = Date.now();
-            return cachedLeaderboard;
-        } catch(e) { return cachedLeaderboard.length > 0 ? cachedLeaderboard : []; }
+        return cachedLeaderboard;
     }
     
-    // ОБНУЛЕНИЕ ЛИДЕРБОРДА (только для админа)
+    // Админ-функции для лидерборда
     async function resetLeaderboard() {
         if (!isAdmin) return;
         try {
-            // Отправляем запрос на сброс через Google Scripts
             await fetch(LEADERBOARD_URL + "?reset=true", { method: "GET", mode: "no-cors" });
             cachedLeaderboard = [];
             lastFetch = 0;
+            addLog("🗑️ ЛИДЕРБОРД", "Полное обнуление лидерборда");
             showToast("🏆 Лидерборд ОБНУЛЕН!", "#f39c12");
         } catch(e) { showToast("❌ Ошибка сброса!", "#e74c3c"); }
     }
     
-    // УДАЛЕНИЕ ИГРОКА ИЗ ЛИДЕРБОРДА
     async function deletePlayerFromLeaderboard(username) {
         if (!isAdmin) return;
         try {
             await fetch(LEADERBOARD_URL + "?delete=" + encodeURIComponent(username), { method: "GET", mode: "no-cors" });
             cachedLeaderboard = [];
             lastFetch = 0;
+            addLog("❌ УДАЛЕНИЕ", `Удалён игрок ${username} из лидерборда`);
             showToast(`✅ Игрок ${username} удалён!`, "#2ecc71");
         } catch(e) { showToast("❌ Ошибка удаления!", "#e74c3c"); }
     }
     
+    async function setPlayerProfit(username, profit) {
+        if (!isAdmin) return;
+        try {
+            await fetch(LEADERBOARD_URL + "?set=" + encodeURIComponent(username) + "&profit=" + profit, { method: "GET", mode: "no-cors" });
+            cachedLeaderboard = [];
+            lastFetch = 0;
+            addLog("💰 ИЗМЕНЕНИЕ", `Игроку ${username} установлена прибыль ${profit}`);
+            showToast(`✅ Прибыль ${username} изменена!`, "#2ecc71");
+        } catch(e) { showToast("❌ Ошибка!", "#e74c3c"); }
+    }
+    
     async function showGlobalLeaderboardModal() {
-        const leaderboard = await fetchLeaderboard();
+        const leaderboard = await fetchLeaderboard(true);
         let modal = document.createElement("div");
         modal.className = "modal-overlay";
         modal.innerHTML = `<div class="fullscreen-modal"><div class="fullscreen-header"><h3>🏆 ГЛОБАЛЬНЫЙ ЛИДЕРБОРД 🏆</h3><button id="closeLeaderboard" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body" id="leaderboardBody"><div style="text-align:center;padding:20px;">🏆 Загрузка...</div></div></div>`;
@@ -345,7 +405,8 @@
                             <div class="leaderboard-level">⭐ ${player.level}</div>
                             ${player.username !== userNickname && !friendsList.includes(player.username) ? `<button class="add-friend-lb" data-user="${player.username}" style="background:#2ecc71;border:none;padding:4px 10px;border-radius:30px;color:white;font-size:0.7rem;">➕</button>` : ''}
                             ${friendsList.includes(player.username) ? `<span style="color:#2ecc71;font-size:0.7rem;">✓ Друг</span>` : ''}
-                            ${isAdmin ? `<button class="admin-delete-lb" data-user="${player.username}" style="background:#e74c3c;border:none;padding:4px 10px;border-radius:30px;color:white;font-size:0.7rem;margin-left:5px;">🗑️</button>` : ''}
+                            ${isAdmin ? `<button class="admin-ban-lb" data-user="${player.username}" style="background:#e74c3c;border:none;padding:4px 10px;border-radius:30px;color:white;font-size:0.7rem;margin-left:5px;">🔨</button>` : ''}
+                            ${isAdmin ? `<button class="admin-edit-lb" data-user="${player.username}" style="background:#f39c12;border:none;padding:4px 10px;border-radius:30px;color:black;font-size:0.7rem;margin-left:5px;">✏️</button>` : ''}
                         </div>`;
             });
         }
@@ -356,78 +417,160 @@
                 e.stopPropagation();
                 sendFriendRequest(btn.dataset.user);
                 btn.remove();
-                showToast(`✅ ${btn.dataset.user} добавлен в друзья!`, "#2ecc71");
             });
         });
-        document.querySelectorAll(".admin-delete-lb").forEach(btn => {
+        document.querySelectorAll(".admin-ban-lb").forEach(btn => {
             btn.addEventListener("click", (e) => {
                 e.stopPropagation();
-                if (confirm(`Удалить игрока ${btn.dataset.user} из лидерборда?`)) {
-                    deletePlayerFromLeaderboard(btn.dataset.user);
-                    modal.remove();
-                    setTimeout(() => showGlobalLeaderboardModal(), 500);
-                }
+                banPlayer(btn.dataset.user);
+            });
+        });
+        document.querySelectorAll(".admin-edit-lb").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                let newProfit = prompt("Введите новую прибыль:", "1000000");
+                if (newProfit) setPlayerProfit(btn.dataset.user, parseInt(newProfit));
             });
         });
         document.getElementById("closeLeaderboard").addEventListener("click", () => modal.remove());
     }
     
     // ========== АДМИН-ПАНЕЛЬ ==========
+    function getLiveStats() {
+        return {
+            totalPlayers: cachedLeaderboard.length,
+            totalProfit: cachedLeaderboard.reduce((sum, p) => sum + p.profit, 0),
+            top1: cachedLeaderboard[0] || null,
+            topPlayerCount: cachedLeaderboard.length
+        };
+    }
+    
+    function setGlobalTheme(theme) {
+        if (theme === "dark") document.body.classList.add("dark");
+        else document.body.classList.remove("dark");
+        localStorage.setItem("globalTheme", theme);
+        addLog("🎨 ТЕМА", `Тема изменена на ${theme} для всех`);
+        showToast(`🌓 Тема изменена на ${theme}`, "#f39c12");
+    }
+    
     function showAdminPanel() {
         if (!isAdmin) return;
+        const stats = getLiveStats();
         let modal = document.createElement("div");
         modal.className = "modal-overlay";
         modal.innerHTML = `<div class="admin-panel">
-            <h2>👑 АДМИН-ПАНЕЛЬ</h2>
-            <div class="admin-section">
-                <h3>💰 БАЛАНС</h3>
-                <input type="number" id="adminMoney" class="admin-input" placeholder="Сумма">
-                <button id="addMoneyBtn" class="admin-btn success-btn">➕ Добавить деньги</button>
-                <button id="setMoneyBtn" class="admin-btn">💵 Установить баланс</button>
+            <div class="admin-header">
+                <h2>👑 АДМИН-ПАНЕЛЬ</h2>
+                <button id="closeAdminPanel" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button>
             </div>
-            <div class="admin-section">
-                <h3>⭐ ОПЫТ</h3>
-                <input type="number" id="adminExp" class="admin-input" placeholder="Опыт">
-                <button id="addExpBtn" class="admin-btn success-btn">➕ Добавить опыт</button>
+            <div class="admin-body">
+                <div class="admin-section">
+                    <h3>📊 ЖИВАЯ СТАТИСТИКА</h3>
+                    <div class="stats-grid" id="statsGrid">
+                        <div class="stat-card"><div class="stat-value" id="statPlayers">${stats.totalPlayers}</div><div>👥 Игроков</div></div>
+                        <div class="stat-card"><div class="stat-value" id="statProfit">${stats.totalProfit.toLocaleString()}₽</div><div>💰 Общая прибыль</div></div>
+                        <div class="stat-card"><div class="stat-value" id="statTopName">${stats.top1?.username || "-"}</div><div>🏆 Топ-1</div></div>
+                        <div class="stat-card"><div class="stat-value" id="statTopProfit">${stats.top1?.profit?.toLocaleString() || "0"}₽</div><div>💰 Топ-1 прибыль</div></div>
+                    </div>
+                    <button id="refreshStatsBtn" class="admin-btn success-btn" style="margin-top:10px;">🔄 Обновить статистику</button>
+                </div>
+                
+                <div class="admin-section">
+                    <h3>💰 УПРАВЛЕНИЕ БАЛАНСОМ</h3>
+                    <input type="number" id="adminMoney" class="admin-input" placeholder="Сумма">
+                    <button id="addMoneyBtn" class="admin-btn success-btn">➕ Добавить деньги</button>
+                    <button id="setMoneyBtn" class="admin-btn">💵 Установить баланс</button>
+                </div>
+                
+                <div class="admin-section">
+                    <h3>⭐ УПРАВЛЕНИЕ ОПЫТОМ</h3>
+                    <input type="number" id="adminExp" class="admin-input" placeholder="Опыт">
+                    <button id="addExpBtn" class="admin-btn success-btn">➕ Добавить опыт</button>
+                </div>
+                
+                <div class="admin-section">
+                    <h3>🏆 УПРАВЛЕНИЕ ЛИДЕРБОРДОМ</h3>
+                    <button id="resetLeaderboardBtn" class="admin-btn danger-btn">🗑️ ОБНУЛИТЬ ВЕСЬ ЛИДЕРБОРД</button>
+                    <button id="refreshLeaderboardBtn" class="admin-btn">🔄 Обновить лидерборд</button>
+                    <div style="margin-top:10px;">
+                        <input type="text" id="editPlayerName" class="admin-input" placeholder="Ник игрока" style="width:60%;">
+                        <input type="number" id="editPlayerProfit" class="admin-input" placeholder="Сумма" style="width:35%;">
+                        <button id="editPlayerBtn" class="admin-btn warning-btn">✏️ Изменить прибыль</button>
+                    </div>
+                </div>
+                
+                <div class="admin-section">
+                    <h3>🛡️ БАН ИГРОКОВ</h3>
+                    <input type="text" id="banPlayerName" class="admin-input" placeholder="Ник игрока">
+                    <button id="banPlayerBtn" class="admin-btn danger-btn">🔨 ЗАБАНИТЬ</button>
+                    <button id="unbanPlayerBtn" class="admin-btn success-btn">🔓 РАЗБАНИТЬ</button>
+                </div>
+                
+                <div class="admin-section">
+                    <h3>🎨 ГЛОБАЛЬНАЯ ТЕМА</h3>
+                    <button id="setLightThemeBtn" class="admin-btn">☀️ Светлая тема</button>
+                    <button id="setDarkThemeBtn" class="admin-btn">🌙 Тёмная тема</button>
+                </div>
+                
+                <div class="admin-section">
+                    <h3>📜 ЛОГИ ДЕЙСТВИЙ</h3>
+                    <div id="logsContainer" style="max-height:200px;overflow-y:auto;font-size:0.8rem;"></div>
+                    <button id="clearLogsBtn" class="admin-btn danger-btn" style="margin-top:5px;">🗑️ Очистить логи</button>
+                </div>
             </div>
-            <div class="admin-section">
-                <h3>🏆 УПРАВЛЕНИЕ ЛИДЕРБОРДОМ</h3>
-                <button id="resetLeaderboardBtn" class="admin-btn danger-btn">🗑️ ОБНУЛИТЬ ВЕСЬ ЛИДЕРБОРД</button>
-                <button id="refreshLeaderboardBtn" class="admin-btn">🔄 Обновить лидерборд</button>
-            </div>
-            <div class="admin-section">
-                <h3>📱 УПРАВЛЕНИЕ ИГРОКАМИ</h3>
-                <input type="text" id="adminPlayerName" class="admin-input" placeholder="Ник игрока">
-                <button id="deletePlayerBtn" class="admin-btn danger-btn">❌ Удалить игрока</button>
-            </div>
-            <button id="closeAdmin" class="close-btn">ЗАКРЫТЬ</button>
         </div>`;
         document.body.appendChild(modal);
         
+        function updateStats() {
+            const newStats = getLiveStats();
+            document.getElementById("statPlayers").innerText = newStats.totalPlayers;
+            document.getElementById("statProfit").innerText = newStats.totalProfit.toLocaleString();
+            document.getElementById("statTopName").innerText = newStats.top1?.username || "-";
+            document.getElementById("statTopProfit").innerText = newStats.top1?.profit?.toLocaleString() || "0";
+        }
+        
+        function updateLogs() {
+            const container = document.getElementById("logsContainer");
+            if (container) {
+                container.innerHTML = adminLogs.slice(0, 30).map(l => `<div class="log-item">[${l.time}] ${l.user}: ${l.action} - ${l.details}</div>`).join('');
+                if (adminLogs.length === 0) container.innerHTML = "<div>Нет логов</div>";
+            }
+        }
+        
+        updateLogs();
+        
+        document.getElementById("refreshStatsBtn").onclick = async () => { await fetchLeaderboard(true); updateStats(); };
         document.getElementById("addMoneyBtn").onclick = () => {
             let amount = parseInt(document.getElementById("adminMoney").value);
-            if (amount) { game.money += amount; game.totalProfit += amount; updateUI(); saveGame(); showToast(`+${amount} ₽`, "#2ecc71"); }
+            if (amount) { game.money += amount; game.totalProfit += amount; updateUI(); saveGame(); addLog("💰 ДЕНЬГИ", `+${amount} ₽ себе`); showToast(`+${amount} ₽`, "#2ecc71"); }
         };
         document.getElementById("setMoneyBtn").onclick = () => {
             let amount = parseInt(document.getElementById("adminMoney").value);
-            if (amount) { game.money = amount; updateUI(); saveGame(); showToast(`Баланс установлен: ${amount} ₽`, "#2ecc71"); }
+            if (amount) { game.money = amount; updateUI(); saveGame(); addLog("💰 БАЛАНС", `Установлен баланс: ${amount} ₽`); showToast(`Баланс: ${amount} ₽`, "#2ecc71"); }
         };
         document.getElementById("addExpBtn").onclick = () => {
             let amount = parseInt(document.getElementById("adminExp").value);
-            if (amount) { addExp(amount); showToast(`+${amount} опыта`, "#f39c12"); }
+            if (amount) { addExp(amount); addLog("⭐ ОПЫТ", `+${amount} опыта себе`); }
         };
-        document.getElementById("resetLeaderboardBtn").onclick = () => {
-            if (confirm("Точно обнулить весь лидерборд? Это действие необратимо!")) resetLeaderboard();
+        document.getElementById("resetLeaderboardBtn").onclick = () => { if (confirm("Точно обнулить весь лидерборд?")) resetLeaderboard(); };
+        document.getElementById("refreshLeaderboardBtn").onclick = async () => { await fetchLeaderboard(true); updateStats(); showToast("Лидерборд обновлён!", "#2ecc71"); };
+        document.getElementById("editPlayerBtn").onclick = () => {
+            let name = document.getElementById("editPlayerName").value.trim();
+            let profit = parseInt(document.getElementById("editPlayerProfit").value);
+            if (name && profit) setPlayerProfit(name, profit);
         };
-        document.getElementById("refreshLeaderboardBtn").onclick = async () => {
-            await fetchLeaderboard(true);
-            showToast("Лидерборд обновлён!", "#2ecc71");
+        document.getElementById("banPlayerBtn").onclick = () => {
+            let name = document.getElementById("banPlayerName").value.trim();
+            if (name) banPlayer(name);
         };
-        document.getElementById("deletePlayerBtn").onclick = () => {
-            let username = document.getElementById("adminPlayerName").value.trim();
-            if (username && confirm(`Удалить игрока ${username}?`)) deletePlayerFromLeaderboard(username);
+        document.getElementById("unbanPlayerBtn").onclick = () => {
+            let name = document.getElementById("banPlayerName").value.trim();
+            if (name) unbanPlayer(name);
         };
-        document.getElementById("closeAdmin").onclick = () => modal.remove();
+        document.getElementById("setLightThemeBtn").onclick = () => setGlobalTheme("light");
+        document.getElementById("setDarkThemeBtn").onclick = () => setGlobalTheme("dark");
+        document.getElementById("clearLogsBtn").onclick = () => { adminLogs = []; localStorage.setItem("adminLogs", JSON.stringify(adminLogs)); updateLogs(); showToast("Логи очищены!", "#e74c3c"); };
+        document.getElementById("closeAdminPanel").onclick = () => modal.remove();
     }
     
     // ========== КОДЫ ==========
@@ -442,10 +585,11 @@
                 const reward = SECRET_CODES[code];
                 if (reward.admin) {
                     isAdmin = true;
+                    addLog("👑 АДМИН", "Активировал админ-панель");
                     showToast(`👑 ${reward.msg}`, "#9b59b6");
                     showAdminPanel();
                 }
-                if (reward.money) { game.money += reward.money; showMoneyAnimation(reward.money); game.totalProfit += reward.money; }
+                if (reward.money) { game.money += reward.money; showMoneyAnimation(reward.money); game.totalProfit += reward.money; addLog("🎁 КОД", `Активирован код ${code}: +${reward.money} ₽`); }
                 if (reward.exp) addExp(reward.exp);
                 if (reward.device) game.inventory.push(reward.device);
                 if (reward.discount) game.discount = reward.discount;
@@ -462,6 +606,7 @@
     
     // ========== ОСНОВНЫЕ ФУНКЦИИ ==========
     function saveGame() { 
+        if (bannedPlayers.has(userNickname)) return;
         localStorage.setItem("iDealerFinal", JSON.stringify({ 
             money: game.money, exp: game.exp, level: game.level, inventory: game.inventory, 
             parts: game.parts, totalSales: game.totalSales, totalProfit: game.totalProfit, 
@@ -479,22 +624,29 @@
     
     function recalcLevel() { let lvl = 1, need = getExpNeeded(lvl), tmp = game.exp; while (tmp >= need && lvl < 30) { tmp -= need; lvl++; need = getExpNeeded(lvl); } game.level = lvl; updateExpUI(); }
     function getExpNeeded(level) { return level === 1 ? 50 : Math.floor(50 + (level-1) * 45); }
-    function addExp(amount) { game.exp += amount; let need = getExpNeeded(game.level); while (game.exp >= need && game.level < 30) { game.exp -= need; game.level++; need = getExpNeeded(game.level); showToast(`🎉 УРОВЕНЬ ${game.level}!`, "#f39c12"); } updateExpUI(); saveGame(); }
+    function addExp(amount) { game.exp += amount; let need = getExpNeeded(game.level); while (game.exp >= need && game.level < 30) { game.exp -= need; game.level++; need = getExpNeeded(game.level); showToast(`🎉 УРОВЕНЬ ${game.level}!`, "#f39c12"); addLog("⭐ УРОВЕНЬ", `Повышение до ${game.level} уровня`); } updateExpUI(); saveGame(); }
     function updateExpUI() { let need = getExpNeeded(game.level); let percent = (game.exp / need) * 100; document.getElementById("expFill").style.width = `${Math.min(100, percent)}%`; document.getElementById("expCurrent").innerText = Math.floor(game.exp); document.getElementById("expNeeded").innerText = need; document.getElementById("levelNum").innerText = game.level; let rank = game.level < 3 ? "🔰 НОВИЧОК" : game.level < 6 ? "🔄 ПЕРЕКУП" : game.level < 10 ? "👑 ПРОФИ" : "💎 ЛЕГЕНДА"; document.getElementById("rankName").innerHTML = rank; }
     function showToast(msg, color="#27ae60") { let toast = document.createElement("div"); toast.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:${color};color:white;padding:10px 20px;border-radius:60px;font-weight:bold;z-index:2000;animation:slideUp 0.2s;font-size:0.9rem;z-index:5000;`; toast.innerText = msg; document.body.appendChild(toast); setTimeout(() => toast.remove(), 2000); }
     function showMoneyAnimation(amount) { let popup = document.createElement("div"); popup.className = "money-popup"; popup.innerText = `+${amount.toLocaleString()} ₽`; popup.style.left = (window.innerWidth/2) + "px"; popup.style.top = (window.innerHeight/2) + "px"; document.body.appendChild(popup); setTimeout(() => popup.remove(), 800); }
     function randomCondition() { return CONDITIONS[Math.floor(Math.random() * CONDITIONS.length)]; }
     function generateMarket() { let available = DEVICES_DB.filter(d => d.minLevel <= game.level); let offers = []; for (let i = 0; i < 8; i++) { let device = available[Math.floor(Math.random() * available.length)]; let condition = randomCondition(); let mult = COND_MOD[condition]; let price = Math.floor(device.base * mult * (0.7 + Math.random() * 0.5)); if (game.discount > 0) price = Math.floor(price * (1 - game.discount / 100)); offers.push({ id: Date.now() + i, model: device.model, icon: device.icon, condition, price: Math.max(1200, price) }); } return offers; }
     function generateSpareMarket() { let offers = []; for (let i = 0; i < 6; i++) { let device = DEVICES_DB[Math.floor(Math.random() * DEVICES_DB.length)]; let price = Math.floor(device.base * 0.15 * (0.5 + Math.random())); if (game.discount > 0) price = Math.floor(price * (1 - game.discount / 100)); offers.push({ id: Date.now() + i, phoneModel: device.model, partType: "Экран", supplier: ["🏪 Автосервис", "📦 Китай", "🔄 Б/у"][Math.floor(Math.random() * 3)], price: Math.max(300, price) }); } return offers; }
-    function buyDevice(offer) { if (game.money < offer.price) { showToast("Не хватает денег!", "#e74c3c"); return; } game.money -= offer.price; game.inventory.push({ model: offer.model, condition: offer.condition, buyPrice: offer.price, brokenPart: offer.condition === "Бит экран" ? "Экран" : null }); showToast(`📲 Куплен ${offer.model}`, "#2ecc71"); currentMarket = generateMarket(); renderMarket(); updateUI(); saveGame(); }
-    function buySparePart(part) { if (game.money < part.price) { showToast("Не хватает денег!", "#e74c3c"); return; } game.money -= part.price; game.parts.push({ id: Date.now() + Math.random(), phoneModel: part.phoneModel, partType: part.partType, supplier: part.supplier, price: part.price }); showToast(`🔧 ${part.partType} для ${part.phoneModel} куплен!`, "#3498db"); currentSpareMarket = generateSpareMarket(); renderSpareMarket(); updateUI(); saveGame(); }
-    function showSellOffers(device, index) { let deviceData = DEVICES_DB.find(d => d.model === device.model); if (!deviceData) return; let baseValue = deviceData.base * COND_MOD[device.condition]; if (device.brokenPart) baseValue *= 0.5; let offers = []; for (let i = 0; i < 3; i++) { let price = Math.floor(baseValue * (0.6 + Math.random() * 0.7)); offers.push(price); } let modal = document.createElement("div"); modal.className = "modal-overlay"; modal.innerHTML = `<div class="offers-modal" style="max-width:340px;width:90%;background:white;border-radius:48px;padding:24px;"><h3>💰 Выбери предложение</h3>${offers.map((price, idx) => `<div class="offer-item" data-offer="${price}" style="background:#f8f9fa;border-radius:20px;padding:12px;margin:10px 0;display:flex;justify-content:space-between;align-items:center;"><div><strong>Перекуп ${idx + 1}</strong></div><div style="font-size:1.2rem;font-weight:bold;color:#e67e22;">${price.toLocaleString()} ₽</div></div>`).join('')}<button id="cancelOffer" class="close-btn">Отмена</button></div>`; document.body.appendChild(modal); document.querySelectorAll(".offer-item").forEach(el => { el.addEventListener("click", () => { let sellPrice = parseInt(el.dataset.offer); game.money += sellPrice; const profit = sellPrice - device.buyPrice; if (profit > 0) { game.totalProfit += profit; addExp(10); } game.inventory.splice(index, 1); game.totalSales++; showMoneyAnimation(sellPrice); showToast(`💰 ПРОДАНО за ${sellPrice.toLocaleString()} ₽`, "#2ecc71"); updateUI(); saveGame(); modal.remove(); }); }); document.getElementById("cancelOffer").addEventListener("click", () => modal.remove()); }
+    function buyDevice(offer) { if (game.money < offer.price) { showToast("Не хватает денег!", "#e74c3c"); return; } game.money -= offer.price; game.inventory.push({ model: offer.model, condition: offer.condition, buyPrice: offer.price, brokenPart: offer.condition === "Бит экран" ? "Экран" : null }); showToast(`📲 Куплен ${offer.model}`, "#2ecc71"); addLog("🛒 ПОКУПКА", `${offer.model} за ${offer.price} ₽`); currentMarket = generateMarket(); renderMarket(); updateUI(); saveGame(); }
+    function buySparePart(part) { if (game.money < part.price) { showToast("Не хватает денег!", "#e74c3c"); return; } game.money -= part.price; game.parts.push({ id: Date.now() + Math.random(), phoneModel: part.phoneModel, partType: part.partType, supplier: part.supplier, price: part.price }); showToast(`🔧 ${part.partType} для ${part.phoneModel} куплен!`, "#3498db"); addLog("🔧 ЗАПЧАСТЬ", `${part.partType} для ${part.phoneModel} за ${part.price} ₽`); currentSpareMarket = generateSpareMarket(); renderSpareMarket(); updateUI(); saveGame(); }
+    function showSellOffers(device, index) { let deviceData = DEVICES_DB.find(d => d.model === device.model); if (!deviceData) return; let baseValue = deviceData.base * COND_MOD[device.condition]; if (device.brokenPart) baseValue *= 0.5; let offers = []; for (let i = 0; i < 3; i++) { let price = Math.floor(baseValue * (0.6 + Math.random() * 0.7)); offers.push(price); } let modal = document.createElement("div"); modal.className = "modal-overlay"; modal.innerHTML = `<div class="offers-modal" style="max-width:340px;width:90%;background:white;border-radius:48px;padding:24px;"><h3>💰 Выбери предложение</h3>${offers.map((price, idx) => `<div class="offer-item" data-offer="${price}" style="background:#f8f9fa;border-radius:20px;padding:12px;margin:10px 0;display:flex;justify-content:space-between;align-items:center;"><div><strong>Перекуп ${idx + 1}</strong></div><div style="font-size:1.2rem;font-weight:bold;color:#e67e22;">${price.toLocaleString()} ₽</div></div>`).join('')}<button id="cancelOffer" class="close-btn">Отмена</button></div>`; document.body.appendChild(modal); document.querySelectorAll(".offer-item").forEach(el => { el.addEventListener("click", () => { let sellPrice = parseInt(el.dataset.offer); game.money += sellPrice; const profit = sellPrice - device.buyPrice; if (profit > 0) { game.totalProfit += profit; addExp(10); } game.inventory.splice(index, 1); game.totalSales++; showMoneyAnimation(sellPrice); addLog("💸 ПРОДАЖА", `${device.model} за ${sellPrice} ₽, прибыль: ${profit} ₽`); showToast(`💰 ПРОДАНО за ${sellPrice.toLocaleString()} ₽`, "#2ecc71"); updateUI(); saveGame(); modal.remove(); }); }); document.getElementById("cancelOffer").addEventListener("click", () => modal.remove()); }
     function renderInventory() { let container = document.getElementById("inventoryList"); if (!container) return; if (game.inventory.length === 0) { container.innerHTML = "<div style='text-align:center;padding:40px;opacity:0.6;'>📭 Нет устройств</div>"; return; } container.innerHTML = ""; game.inventory.forEach((device, idx) => { let div = document.createElement("div"); div.className = "phone-card"; div.style.borderLeftColor = COND_COLORS[device.condition]; div.innerHTML = `<div class="phone-info"><strong>📱 ${device.model}</strong><div class="condition-badge">${device.condition}${device.brokenPart ? ` 🔨 ${device.brokenPart}` : ""}</div><small>💰 ${device.buyPrice?.toLocaleString()}₽</small></div><div class="phone-actions"><button class="sell-btn">💰 ПРОДАТЬ</button></div>`; div.querySelector(".sell-btn").addEventListener("click", (e) => { e.stopPropagation(); showSellOffers(device, idx); }); container.appendChild(div); }); }
     function renderMarket() { let container = document.getElementById("marketGrid"); if (!container) return; container.innerHTML = ""; currentMarket.forEach(offer => { let card = document.createElement("div"); card.className = "market-item"; card.style.borderTop = `3px solid ${COND_COLORS[offer.condition]}`; card.innerHTML = `<div style="font-size:1.8rem;">${offer.icon}</div><div style="font-weight:bold;font-size:0.9rem;">${offer.model}</div><div style="font-size:0.65rem;">${offer.condition}</div><div class="price-tag">${offer.price.toLocaleString()} ₽</div><button class="buy-btn">💸 КУПИТЬ</button>`; card.querySelector(".buy-btn").addEventListener("click", (e) => { e.stopPropagation(); buyDevice(offer); }); container.appendChild(card); }); }
     function renderSpareMarket() { let container = document.getElementById("spareMarketGrid"); if (!container) return; container.innerHTML = ""; currentSpareMarket.forEach(part => { let card = document.createElement("div"); card.className = "market-item"; card.innerHTML = `<div style="font-size:1.5rem;">🔧</div><div style="font-weight:bold;font-size:0.8rem;">${part.partType}</div><div style="font-size:0.7rem;">для ${part.phoneModel}</div><div class="price-tag">${part.price.toLocaleString()} ₽</div><button class="buy-btn">💸 КУПИТЬ</button>`; card.querySelector(".buy-btn").addEventListener("click", (e) => { e.stopPropagation(); buySparePart(part); }); container.appendChild(card); }); }
     function updateUI() { document.getElementById("balance").innerText = Math.floor(game.money).toLocaleString(); renderInventory(); renderMarket(); renderSpareMarket(); updateExpUI(); }
     
-    function showProfile() { let modal = document.createElement("div"); modal.className = "modal-overlay"; modal.innerHTML = `<div class="profile-content" style="max-width:340px;width:90%;background:white;border-radius:48px;padding:24px;"><div class="profile-header"><div style="font-size:4rem;background:linear-gradient(135deg,#f39c12,#e67e22);width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">👨‍💼</div><h2>${userNickname || "Мастер"}</h2><p>⭐ Уровень ${game.level} • ${game.totalSales} продаж</p>${isAdmin ? '<p style="color:#9b59b6;">👑 АДМИН</p>' : ''}</div><div class="profile-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><div class="stat-card" style="background:#f0f2f5;border-radius:20px;padding:10px;text-align:center;"><div class="stat-value">${Math.floor(game.money).toLocaleString()}₽</div><div class="stat-label">БАЛАНС</div></div><div class="stat-card" style="background:#f0f2f5;border-radius:20px;padding:10px;text-align:center;"><div class="stat-value">${game.totalProfit.toLocaleString()}₽</div><div class="stat-label">ПРИБЫЛЬ</div></div><div class="stat-card" style="background:#f0f2f5;border-radius:20px;padding:10px;text-align:center;"><div class="stat-value">${game.inventory.length}</div><div class="stat-label">УСТРОЙСТВ</div></div></div>${isAdmin ? '<button id="adminPanelBtn" class="admin-btn" style="width:100%;margin-top:12px;">👑 ОТКРЫТЬ АДМИН-ПАНЕЛЬ</button>' : ''}<button id="closeProfile" class="close-btn">ЗАКРЫТЬ</button></div>`; document.body.appendChild(modal); if (isAdmin) document.getElementById("adminPanelBtn")?.addEventListener("click", () => { modal.remove(); showAdminPanel(); }); document.getElementById("closeProfile").addEventListener("click", () => modal.remove()); }
+    function showProfile() { 
+        let modal = document.createElement("div"); 
+        modal.className = "modal-overlay"; 
+        modal.innerHTML = `<div class="profile-content" style="max-width:340px;width:90%;background:white;border-radius:48px;padding:24px;"><div class="profile-header"><div style="font-size:4rem;background:linear-gradient(135deg,#f39c12,#e67e22);width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">👨‍💼</div><h2>${userNickname || "Мастер"}</h2><p>⭐ Уровень ${game.level} • ${game.totalSales} продаж</p>${isAdmin ? '<p style="color:#9b59b6;">👑 АДМИН</p>' : ''}</div><div class="profile-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><div class="stat-card" style="background:#f0f2f5;border-radius:20px;padding:10px;text-align:center;"><div class="stat-value">${Math.floor(game.money).toLocaleString()}₽</div><div class="stat-label">БАЛАНС</div></div><div class="stat-card" style="background:#f0f2f5;border-radius:20px;padding:10px;text-align:center;"><div class="stat-value">${game.totalProfit.toLocaleString()}₽</div><div class="stat-label">ПРИБЫЛЬ</div></div><div class="stat-card" style="background:#f0f2f5;border-radius:20px;padding:10px;text-align:center;"><div class="stat-value">${game.inventory.length}</div><div class="stat-label">УСТРОЙСТВ</div></div></div>${isAdmin ? '<button id="adminPanelBtn" class="admin-btn" style="width:100%;margin-top:12px;">👑 ОТКРЫТЬ АДМИН-ПАНЕЛЬ</button>' : ''}<button id="closeProfile" class="close-btn">ЗАКРЫТЬ</button></div>`; 
+        document.body.appendChild(modal); 
+        if (isAdmin) document.getElementById("adminPanelBtn")?.addEventListener("click", () => { modal.remove(); showAdminPanel(); }); 
+        document.getElementById("closeProfile").addEventListener("click", () => modal.remove()); 
+    }
     function resetGameWithConfirm() { let modal = document.createElement("div"); modal.className = "modal-overlay"; modal.innerHTML = `<div class="offers-modal" style="max-width:340px;"><h2>⚠️ ВНИМАНИЕ!</h2><p>Сбросить прогресс?</p><div style="display:flex;gap:12px;margin-top:20px;"><button id="confirmReset" style="background:#e74c3c;flex:1;padding:12px;border-radius:40px;">ДА</button><button id="cancelReset" style="background:#95a5a6;flex:1;padding:12px;border-radius:40px;">НЕТ</button></div></div>`; document.body.appendChild(modal); document.getElementById("confirmReset").addEventListener("click", () => { resetGame(); modal.remove(); }); document.getElementById("cancelReset").addEventListener("click", () => modal.remove()); }
     function resetGame() { game = { money: 5000, exp: 0, level: 1, inventory: [{ model: "iPhone 6", condition: "Бит экран", buyPrice: 1800, brokenPart: "Экран" }], parts: [], totalSales: 0, totalProfit: 0, discount: 0 }; usedCodes.clear(); friendsList = []; isAdmin = false; recalcLevel(); currentMarket = generateMarket(); currentSpareMarket = generateSpareMarket(); updateUI(); showToast("Прогресс сброшен!", "#e74c3c"); saveGame(); saveFriends(); }
     
@@ -502,7 +654,7 @@
     function showPassModal() { showToast("🎫 Перекуп Pass скоро!", "#f39c12"); }
     function showShopModal() { showToast("💰 Магазин скоро!", "#f39c12"); }
     
-    function initDrawer() { let overlay = document.getElementById("drawerOverlay"); let drawer = document.getElementById("drawerMenu"); document.getElementById("menuBtn").addEventListener("click", () => { overlay.style.display = "block"; drawer.classList.add("open"); }); overlay.addEventListener("click", () => { overlay.style.display = "none"; drawer.classList.remove("open"); }); document.querySelectorAll(".drawer-item").forEach(item => { item.addEventListener("click", () => { overlay.style.display = "none"; drawer.classList.remove("open"); let action = item.dataset.action; if (action === "daily") showDailyModal(); if (action === "pass") showPassModal(); if (action === "shop") showShopModal(); if (action === "codes") showCodesModal(); if (action === "theme") { document.body.classList.toggle("dark"); saveGame(); } if (action === "reset") resetGameWithConfirm(); }); }); }
+    function initDrawer() { let overlay = document.getElementById("drawerOverlay"); let drawer = document.getElementById("drawerMenu"); document.getElementById("menuBtn").addEventListener("click", () => { overlay.style.display = "block"; drawer.classList.add("open"); }); overlay.addEventListener("click", () => { overlay.style.display = "none"; drawer.classList.remove("open"); }); document.querySelectorAll(".drawer-item").forEach(item => { item.addEventListener("click", () => { overlay.style.display = "none"; drawer.classList.remove("open"); let action = item.dataset.action; if (action === "daily") showDailyModal(); if (action === "pass") showPassModal(); if (action === "shop") showShopModal(); if (action === "codes") showCodesModal(); if (action === "theme") { document.body.classList.toggle("dark"); saveGame(); addLog("🎨 ТЕМА", `Тема изменена на ${document.body.classList.contains("dark") ? "тёмную" : "светлую"}`); } if (action === "reset") resetGameWithConfirm(); }); }); }
     function initTabs() { document.querySelectorAll(".tab-btn").forEach(btn => { btn.addEventListener("click", () => { let tab = btn.dataset.tab; document.querySelectorAll(".section").forEach(sec => sec.classList.remove("active")); document.getElementById(`${tab}Section`).classList.add("active"); document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active")); btn.classList.add("active"); if (tab === "market") { currentMarket = generateMarket(); renderMarket(); } if (tab === "spareMarket") { currentSpareMarket = generateSpareMarket(); renderSpareMarket(); } }); }); }
     
     function showNicknameModal() { 
@@ -530,6 +682,12 @@
             currentSpareMarket = generateSpareMarket(); 
             updateUI(); 
             loadFriends(); 
+            loadLogs();
+            loadBannedPlayers();
+            if (bannedPlayers.has(userNickname)) {
+                showToast("❌ ВЫ ЗАБАНЕНЫ!", "#e74c3c");
+                resetGame();
+            }
         }); 
         input.addEventListener("keypress", (e) => {
             if (e.key === "Enter") {
@@ -542,6 +700,12 @@
                     currentSpareMarket = generateSpareMarket();
                     updateUI();
                     loadFriends();
+                    loadLogs();
+                    loadBannedPlayers();
+                    if (bannedPlayers.has(userNickname)) {
+                        showToast("❌ ВЫ ЗАБАНЕНЫ!", "#e74c3c");
+                        resetGame();
+                    }
                 } else {
                     showToast("❌ Введи никнейм!", "#e74c3c");
                 }
@@ -557,6 +721,14 @@
         currentSpareMarket = generateSpareMarket(); 
         updateUI(); 
         loadFriends(); 
+        loadLogs();
+        loadBannedPlayers();
+        if (bannedPlayers.has(userNickname)) {
+            showToast("❌ ВЫ ЗАБАНЕНЫ!", "#e74c3c");
+            resetGame();
+        }
+        // Кэшируем лидерборд при старте
+        fetchLeaderboard(true);
     }
     initTabs(); 
     initDrawer();
