@@ -41,7 +41,7 @@
         .inventory-grid, .market-grid { display: flex; flex-direction: column; gap: 12px; max-height: 450px; overflow-y: auto; padding: 4px; }
         .market-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 
-        .phone-card { background: white; border-radius: 20px; padding: 12px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .phone-card { background: white; borderRadius: 20px; padding: 12px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .phone-info { flex: 1; }
         .phone-actions { display: flex; gap: 8px; flex-wrap: wrap; }
         .sell-btn, .repair-btn { border: none; padding: 8px 14px; border-radius: 40px; font-weight: bold; color: white; cursor: pointer; font-size: 0.75rem; }
@@ -132,6 +132,74 @@
 </div>
 
 <script>
+    // ========== ГЛОБАЛЬНЫЙ ЛИДЕРБОРД (GOOGLE SHEETS) ==========
+    const LEADERBOARD_URL = "https://script.google.com/macros/s/AKfycbx2vQkAN1YRo40wKQwBK9DpJIZAONpmhiqL-40GiiRBCb3CmcCn3_rHp7RkyO1ZfbqxSg/exec";
+
+    // Отправка результата в глобальный лидерборд
+    async function sendToGlobalLeaderboard() {
+        try {
+            await fetch(LEADERBOARD_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    username: userNickname || "Мастер",
+                    profit: game.totalProfit,
+                    level: game.level
+                })
+            });
+            console.log("Рекорд отправлен в глобальный лидерборд!");
+        } catch(e) {
+            console.log("Ошибка отправки:", e);
+        }
+    }
+
+    // Получение глобального лидерборда
+    async function fetchGlobalLeaderboard() {
+        try {
+            const response = await fetch(LEADERBOARD_URL + "?t=" + Date.now());
+            const data = await response.json();
+            return data.leaderboard || [];
+        } catch(e) {
+            console.log("Ошибка получения:", e);
+            return [];
+        }
+    }
+
+    // Показать глобальный лидерборд
+    async function showGlobalLeaderboardModal() {
+        let modal = document.createElement("div");
+        modal.className = "modal-overlay";
+        modal.innerHTML = `<div class="fullscreen-modal"><div class="fullscreen-header"><h3>🏆 ГЛОБАЛЬНЫЙ ЛИДЕРБОРД 🏆</h3><button id="closeLeaderboard" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body" id="leaderboardBody"><div style="text-align:center;padding:20px;">🌍 Загрузка рекордов со всего мира...</div></div></div>`;
+        document.body.appendChild(modal);
+
+        const leaderboard = await fetchGlobalLeaderboard();
+        let html = `<div style="margin-bottom: 16px; text-align:center;">🌍 ТОП-50 ПЕРЕКУПОВ СО ВСЕГО МИРА 🌍</div>`;
+
+        if (leaderboard.length === 0) {
+            html = `<div style="text-align:center;padding:40px;">🏆 Пока никого нет!<br>Будь первым в глобальном лидерборде!</div>`;
+        } else {
+            leaderboard.forEach((player, index) => {
+                let medal = "";
+                let rankClass = "";
+                if (index === 0) { rankClass = "leaderboard-top-1"; medal = "🥇 "; }
+                else if (index === 1) { rankClass = "leaderboard-top-2"; medal = "🥈 "; }
+                else if (index === 2) { rankClass = "leaderboard-top-3"; medal = "🥉 "; }
+                else { medal = `${index+1}. `; }
+
+                html += `<div class="leaderboard-item ${rankClass}">
+                            <div class="leaderboard-rank">${medal}</div>
+                            <div class="leaderboard-name">👤 ${player.username}</div>
+                            <div class="leaderboard-profit">💰 ${player.profit.toLocaleString()}₽</div>
+                            <div class="leaderboard-level">⭐ ${player.level}</div>
+                        </div>`;
+            });
+        }
+
+        document.getElementById("leaderboardBody").innerHTML = html;
+        document.getElementById("closeLeaderboard").addEventListener("click", () => modal.remove());
+    }
+
     // ========== БАЗА УСТРОЙСТВ ==========
     const DEVICES_DB = [
         { model: "iPhone 6", base: 3500, icon: "📱", minLevel: 1 },
@@ -158,71 +226,6 @@
     let userNickname = "";
     let usedCodes = new Set();
 
-    // ========== ЛИДЕРБОРД ==========
-    let leaderboard = [];
-
-    function loadLeaderboard() {
-        const saved = localStorage.getItem("leaderboard");
-        if (saved) leaderboard = JSON.parse(saved);
-        else leaderboard = [];
-    }
-
-    function saveLeaderboard() {
-        leaderboard.sort((a, b) => b.profit - a.profit);
-        leaderboard = leaderboard.slice(0, 50);
-        localStorage.setItem("leaderboard", JSON.stringify(leaderboard));
-    }
-
-    function updateLeaderboard() {
-        const existing = leaderboard.find(p => p.username === userNickname);
-        if (existing) {
-            if (game.totalProfit > existing.profit) {
-                existing.profit = game.totalProfit;
-                existing.level = game.level;
-                existing.date = Date.now();
-            }
-        } else {
-            leaderboard.push({ username: userNickname, profit: game.totalProfit, level: game.level, date: Date.now() });
-        }
-        saveLeaderboard();
-    }
-
-    function showLeaderboardModal() {
-        loadLeaderboard();
-        let modal = document.createElement("div");
-        modal.className = "modal-overlay";
-
-        let html = `<div class="fullscreen-modal"><div class="fullscreen-header"><h3>🏆 ЛИДЕРБОРД 🏆</h3><button id="closeLeaderboard" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body">`;
-
-        if (leaderboard.length === 0) {
-            html += `<div style="text-align:center;padding:40px;">🏆 Пока никого нет!<br>Стань первым в лидерборде!</div>`;
-        } else {
-            html += `<div style="margin-bottom: 16px; text-align:center;">ТОП-50 ПЕРЕКУПОВ</div>`;
-            leaderboard.forEach((player, index) => {
-                let rankClass = "";
-                let medal = "";
-                if (index === 0) { rankClass = "leaderboard-top-1"; medal = "🥇 "; }
-                else if (index === 1) { rankClass = "leaderboard-top-2"; medal = "🥈 "; }
-                else if (index === 2) { rankClass = "leaderboard-top-3"; medal = "🥉 "; }
-                else { medal = `${index+1}. `; }
-
-                html += `<div class="leaderboard-item ${rankClass}">
-                            <div class="leaderboard-rank">${medal}</div>
-                            <div class="leaderboard-name">👤 ${player.username}</div>
-                            <div class="leaderboard-profit">💰 ${player.profit.toLocaleString()}₽</div>
-                            <div class="leaderboard-level">⭐ ${player.level}</div>
-                        </div>`;
-            });
-        }
-
-        html += `<button id="closeLeaderboardBtn" class="close-btn">Закрыть</button></div></div>`;
-        modal.innerHTML = html;
-        document.body.appendChild(modal);
-
-        document.getElementById("closeLeaderboard").addEventListener("click", () => modal.remove());
-        document.getElementById("closeLeaderboardBtn").addEventListener("click", () => modal.remove());
-    }
-
     // PASS система
     let passLevel = 1, passPoints = 0, passNeeded = 100;
     let dailyTasks = [
@@ -241,12 +244,22 @@
         9: { money: 250000, msg: "250 000 ₽", coins: 30 }, 10: { device: { model: "Apple Vision Pro", condition: "Идеальное", buyPrice: 0, brokenPart: null }, msg: "Apple Vision Pro + 500 000 ₽", money: 500000, coins: 50 }
     };
 
-    function saveGame() { localStorage.setItem("iDealerFinal", JSON.stringify({ money: game.money, exp: game.exp, level: game.level, inventory: game.inventory, parts: game.parts, totalSales: game.totalSales, totalProfit: game.totalProfit, coins: game.coins, theme: document.body.classList.contains("dark") ? "dark" : "light", usedCodes: Array.from(usedCodes), nickname: userNickname, passLevel, passPoints, dailyTasks })); updateLeaderboard(); }
+    function saveGame() {
+        localStorage.setItem("iDealerFinal", JSON.stringify({
+            money: game.money, exp: game.exp, level: game.level, inventory: game.inventory,
+            parts: game.parts, totalSales: game.totalSales, totalProfit: game.totalProfit,
+            coins: game.coins, theme: document.body.classList.contains("dark") ? "dark" : "light",
+            usedCodes: Array.from(usedCodes), nickname: userNickname, passLevel, passPoints, dailyTasks
+        }));
+        sendToGlobalLeaderboard(); // Отправляем в глобальный лидерборд
+    }
+
     function loadGame() {
         let data = localStorage.getItem("iDealerFinal");
         if (!data) return false;
-        try { let saved = JSON.parse(data); game.money = saved.money; game.exp = saved.exp; game.level = saved.level; game.inventory = saved.inventory; game.parts = saved.parts || []; game.totalSales = saved.totalSales || 0; game.totalProfit = saved.totalProfit || 0; game.coins = saved.coins || 0; if (saved.theme === "dark") document.body.classList.add("dark"); if (saved.usedCodes) usedCodes = new Set(saved.usedCodes); if (saved.nickname) userNickname = saved.nickname; if (saved.passLevel) passLevel = saved.passLevel; if (saved.passPoints) passPoints = saved.passPoints; if (saved.dailyTasks) dailyTasks = saved.dailyTasks; recalcLevel(); loadLeaderboard(); return true; } catch(e) { return false; }
+        try { let saved = JSON.parse(data); game.money = saved.money; game.exp = saved.exp; game.level = saved.level; game.inventory = saved.inventory; game.parts = saved.parts || []; game.totalSales = saved.totalSales || 0; game.totalProfit = saved.totalProfit || 0; game.coins = saved.coins || 0; if (saved.theme === "dark") document.body.classList.add("dark"); if (saved.usedCodes) usedCodes = new Set(saved.usedCodes); if (saved.nickname) userNickname = saved.nickname; if (saved.passLevel) passLevel = saved.passLevel; if (saved.passPoints) passPoints = saved.passPoints; if (saved.dailyTasks) dailyTasks = saved.dailyTasks; recalcLevel(); return true; } catch(e) { return false; }
     }
+
     function recalcLevel() { let lvl = 1, need = getExpNeeded(lvl), tmp = game.exp; while (tmp >= need && lvl < 30) { tmp -= need; lvl++; need = getExpNeeded(lvl); } game.level = lvl; updateExpUI(); }
     function getExpNeeded(level) { return level === 1 ? 50 : Math.floor(50 + (level-1) * 45); }
     function addExp(amount) { game.exp += amount; let need = getExpNeeded(game.level); while (game.exp >= need && game.level < 30) { game.exp -= need; game.level++; need = getExpNeeded(game.level); showToast(`🎉 УРОВЕНЬ ${game.level}!`, "#f39c12"); addPassPoints(50); } updateExpUI(); saveGame(); }
@@ -276,7 +289,7 @@
     function initTabs() { document.querySelectorAll(".tab-btn").forEach(btn => { btn.addEventListener("click", () => { let tab = btn.dataset.tab; document.querySelectorAll(".section").forEach(sec => sec.classList.remove("active")); document.getElementById(`${tab}Section`).classList.add("active"); document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active")); btn.classList.add("active"); if (tab === "market") { currentMarket = generateMarket(); renderMarket(); } if (tab === "spareMarket") { currentSpareMarket = generateSpareMarket(); renderSpareMarket(); } }); }); }
     function showNicknameModal() { let modal = document.createElement("div"); modal.className = "modal-overlay"; modal.innerHTML = `<div class="nickname-modal" style="max-width:340px;width:90%;background:white;border-radius:48px;padding:24px;"><h2>👋 Добро пожаловать!</h2><p>Как тебя зовут?</p><input type="text" id="nickInput" class="code-input" placeholder="Введи никнейм" maxlength="20" value="Мастер" style="width:100%;margin:16px 0;"><button id="saveNickBtn" style="background:#2ecc71;width:100%;padding:14px;border-radius:60px;border:none;color:white;font-weight:bold;">🚀 НАЧАТЬ ИГРУ</button></div>`; document.body.appendChild(modal); document.getElementById("saveNickBtn").addEventListener("click", () => { let nick = document.getElementById("nickInput").value.trim() || "Мастер"; userNickname = nick; saveGame(); modal.remove(); currentMarket = generateMarket(); currentSpareMarket = generateSpareMarket(); updateUI(); }); }
     if (!loadGame() || !userNickname) { showNicknameModal(); } else { currentMarket = generateMarket(); currentSpareMarket = generateSpareMarket(); updateUI(); }
-    initTabs(); initDrawer(); document.getElementById("profileBtn").addEventListener("click", showProfile); document.getElementById("leaderboardBtn").addEventListener("click", showLeaderboardModal);
+    initTabs(); initDrawer(); document.getElementById("profileBtn").addEventListener("click", showProfile); document.getElementById("leaderboardBtn").addEventListener("click", showGlobalLeaderboardModal);
 </script>
 </body>
 </html>
