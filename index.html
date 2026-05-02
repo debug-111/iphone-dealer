@@ -93,6 +93,7 @@
             .sell-btn, .repair-btn { padding: 6px 8px; font-size: 0.6rem; }
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="container">
@@ -132,7 +133,6 @@
     <div class="drawer-item" data-action="reset">💣 Сбросить прогресс</div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
     // ========== SUPABASE НАСТРОЙКА ==========
     const SUPABASE_URL = "https://jykipbzqrkdoiqvzblhx.supabase.co";
@@ -163,7 +163,7 @@
     const SECRET_CODES = {
         "MASTER5000": { money: 5000, msg: "5000 ₽ зачислено!" },
         "MASTER10000": { money: 10000, msg: "10000 ₽ зачислено!" },
-        "SUPERDEALER": { money: 500000, msg: "500000 ₽! Ты настоящий магнат!" },
+        "SUPERDEALER": { money: 500000, msg: "500000 ₽!" },
         "GOLDENHANDS": { money: 250000, device: { model: "iPhone 15 Pro", condition: "Идеальное", buyPrice: 0, brokenPart: null }, msg: "250000 ₽ + iPhone 15 Pro!" },
         "LEVELBOOST": { exp: 250, msg: "+250 опыта!" },
         "GODLEVEL": { exp: 1000, msg: "+1000 опыта!" },
@@ -184,8 +184,6 @@
     let currentMarket = [], currentSpareMarket = [];
     let userNickname = "";
     let usedCodes = new Set();
-
-    // Друзья
     let friendsList = [];
 
     function saveFriends() {
@@ -223,9 +221,7 @@
         let modal = document.createElement("div");
         modal.className = "modal-overlay";
         let html = `<div class="fullscreen-modal"><div class="fullscreen-header"><h3>👥 МОИ ДРУЗЬЯ</h3><button id="closeFriends" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body">`;
-
         html += `<div style="margin-bottom:16px;"><button id="inviteFriendBtn" style="background:#9b59b6;padding:12px;border-radius:40px;border:none;color:white;width:100%;">🔗 ПРИГЛАСИТЬ ДРУГА</button></div>`;
-
         if (friendsList.length === 0) {
             html += `<div style="text-align:center;padding:40px;">👥 У тебя пока нет друзей<br>Добавь их из лидерборда!</div>`;
         } else {
@@ -234,11 +230,9 @@
                 html += `<div class="friend-item" style="justify-content:space-between;"><span>👤 ${friend}</span><button class="remove-friend" data-user="${friend}" style="background:#e74c3c;border:none;padding:4px 12px;border-radius:30px;color:white;">❌ Удалить</button></div>`;
             }
         }
-
         html += `</div></div>`;
         modal.innerHTML = html;
         document.body.appendChild(modal);
-
         document.getElementById("inviteFriendBtn")?.addEventListener("click", () => {
             const inviteLink = `https://t.me/share/url?url=🎮 Присоединяйся к iDealer Pro! Мой ник: ${userNickname}`;
             navigator.clipboard.writeText(inviteLink);
@@ -254,22 +248,12 @@
         document.getElementById("closeFriends").addEventListener("click", () => modal.remove());
     }
 
-    // Лидерборд
     async function updateLeaderboard() {
-        await supabase.from("leaderboard").upsert({
-            username: userNickname,
-            profit: game.totalProfit,
-            level: game.level,
-            last_update: new Date()
-        });
+        await supabase.from("leaderboard").upsert({ username: userNickname, profit: game.totalProfit, level: game.level, last_update: new Date() });
     }
 
     async function fetchLeaderboard() {
-        const { data } = await supabase
-            .from("leaderboard")
-            .select("*")
-            .order("profit", { ascending: false })
-            .limit(50);
+        const { data } = await supabase.from("leaderboard").select("*").order("profit", { ascending: false }).limit(50);
         return data || [];
     }
 
@@ -279,9 +263,7 @@
         modal.className = "modal-overlay";
         modal.innerHTML = `<div class="fullscreen-modal"><div class="fullscreen-header"><h3>🏆 ГЛОБАЛЬНЫЙ ЛИДЕРБОРД 🏆</h3><button id="closeLeaderboard" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body" id="leaderboardBody"></div></div>`;
         document.body.appendChild(modal);
-
         let html = `<div style="margin-bottom: 16px; text-align:center; font-weight:bold;">🌍 ТОП-50 ПЕРЕКУПОВ ВСЕГО МИРА 🌍</div>`;
-
         if (leaderboard.length === 0) {
             html = `<div style="text-align:center;padding:40px;">🏆 Пока никого нет!<br>Будь первым в мировом лидерборде!</div>`;
         } else {
@@ -292,7 +274,6 @@
                 else if (index === 1) { rankClass = "leaderboard-top-2"; medal = "🥈 "; }
                 else if (index === 2) { rankClass = "leaderboard-top-3"; medal = "🥉 "; }
                 else { medal = `${index+1}. `; }
-
                 html += `<div class="leaderboard-item ${rankClass}">
                             <div class="leaderboard-rank">${medal}</div>
                             <div class="leaderboard-name">👤 ${player.username}</div>
@@ -303,7 +284,6 @@
                         </div>`;
             });
         }
-
         document.getElementById("leaderboardBody").innerHTML = html;
         document.querySelectorAll(".add-friend-lb").forEach(btn => {
             btn.addEventListener("click", (e) => {
@@ -341,14 +321,8 @@
         document.getElementById("closeCodes").addEventListener("click", () => modal.remove());
     }
 
-    // ОСНОВНЫЕ ФУНКЦИИ ИГРЫ
     function saveGame() {
-        localStorage.setItem("iDealerFinal", JSON.stringify({
-            money: game.money, exp: game.exp, level: game.level, inventory: game.inventory,
-            parts: game.parts, totalSales: game.totalSales, totalProfit: game.totalProfit,
-            theme: document.body.classList.contains("dark") ? "dark" : "light",
-            usedCodes: Array.from(usedCodes), nickname: userNickname, discount: game.discount
-        }));
+        localStorage.setItem("iDealerFinal", JSON.stringify({ money: game.money, exp: game.exp, level: game.level, inventory: game.inventory, parts: game.parts, totalSales: game.totalSales, totalProfit: game.totalProfit, theme: document.body.classList.contains("dark") ? "dark" : "light", usedCodes: Array.from(usedCodes), nickname: userNickname, discount: game.discount }));
         updateLeaderboard();
     }
 
@@ -374,18 +348,14 @@
     function renderMarket() { let container = document.getElementById("marketGrid"); if (!container) return; container.innerHTML = ""; currentMarket.forEach(offer => { let card = document.createElement("div"); card.className = "market-item"; card.style.borderTop = `3px solid ${COND_COLORS[offer.condition]}`; card.innerHTML = `<div style="font-size:1.8rem;">${offer.icon}</div><div style="font-weight:bold;font-size:0.9rem;">${offer.model}</div><div style="font-size:0.65rem;">${offer.condition}</div><div class="price-tag">${offer.price.toLocaleString()} ₽</div><button class="buy-btn">💸 КУПИТЬ</button>`; card.querySelector(".buy-btn").addEventListener("click", (e) => { e.stopPropagation(); buyDevice(offer); }); container.appendChild(card); }); }
     function renderSpareMarket() { let container = document.getElementById("spareMarketGrid"); if (!container) return; container.innerHTML = ""; currentSpareMarket.forEach(part => { let card = document.createElement("div"); card.className = "market-item"; card.innerHTML = `<div style="font-size:1.5rem;">🔧</div><div style="font-weight:bold;font-size:0.8rem;">${part.partType}</div><div style="font-size:0.7rem;">для ${part.phoneModel}</div><div class="price-tag">${part.price.toLocaleString()} ₽</div><button class="buy-btn">💸 КУПИТЬ</button>`; card.querySelector(".buy-btn").addEventListener("click", (e) => { e.stopPropagation(); buySparePart(part); }); container.appendChild(card); }); }
     function updateUI() { document.getElementById("balance").innerText = Math.floor(game.money).toLocaleString(); renderInventory(); renderMarket(); renderSpareMarket(); updateExpUI(); }
-
     function showProfile() { let modal = document.createElement("div"); modal.className = "modal-overlay"; modal.innerHTML = `<div class="profile-content" style="max-width:340px;width:90%;background:white;border-radius:48px;padding:24px;"><div class="profile-header"><div style="font-size:4rem;background:linear-gradient(135deg,#f39c12,#e67e22);width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">👨‍💼</div><h2>${userNickname || "Мастер"}</h2><p>⭐ Уровень ${game.level} • ${game.totalSales} продаж</p></div><div class="profile-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><div class="stat-card" style="background:#f0f2f5;border-radius:20px;padding:10px;text-align:center;"><div class="stat-value">${Math.floor(game.money).toLocaleString()}₽</div><div class="stat-label">БАЛАНС</div></div><div class="stat-card" style="background:#f0f2f5;border-radius:20px;padding:10px;text-align:center;"><div class="stat-value">${game.totalProfit.toLocaleString()}₽</div><div class="stat-label">ПРИБЫЛЬ</div></div><div class="stat-card" style="background:#f0f2f5;border-radius:20px;padding:10px;text-align:center;"><div class="stat-value">${game.inventory.length}</div><div class="stat-label">УСТРОЙСТВ</div></div></div><button id="closeProfile" class="close-btn">ЗАКРЫТЬ</button></div>`; document.body.appendChild(modal); document.getElementById("closeProfile").addEventListener("click", () => modal.remove()); }
     function resetGameWithConfirm() { let modal = document.createElement("div"); modal.className = "modal-overlay"; modal.innerHTML = `<div class="offers-modal" style="max-width:340px;"><h2>⚠️ ВНИМАНИЕ!</h2><p>Сбросить прогресс?</p><div style="display:flex;gap:12px;margin-top:20px;"><button id="confirmReset" style="background:#e74c3c;flex:1;padding:12px;border-radius:40px;">ДА</button><button id="cancelReset" style="background:#95a5a6;flex:1;padding:12px;border-radius:40px;">НЕТ</button></div></div>`; document.body.appendChild(modal); document.getElementById("confirmReset").addEventListener("click", () => { resetGame(); modal.remove(); }); document.getElementById("cancelReset").addEventListener("click", () => modal.remove()); }
     function resetGame() { game = { money: 5000, exp: 0, level: 1, inventory: [{ model: "iPhone 6", condition: "Бит экран", buyPrice: 1800, brokenPart: "Экран" }], parts: [], totalSales: 0, totalProfit: 0, discount: 0 }; usedCodes.clear(); friendsList = []; recalcLevel(); currentMarket = generateMarket(); currentSpareMarket = generateSpareMarket(); updateUI(); showToast("Прогресс сброшен!", "#e74c3c"); saveGame(); saveFriends(); }
-
     function showDailyModal() { showToast("📅 Ежедневные задания скоро!", "#f39c12"); }
     function showPassModal() { showToast("🎫 Перекуп Pass скоро!", "#f39c12"); }
     function showShopModal() { showToast("💰 Магазин скоро!", "#f39c12"); }
-
     function initDrawer() { let overlay = document.getElementById("drawerOverlay"); let drawer = document.getElementById("drawerMenu"); document.getElementById("menuBtn").addEventListener("click", () => { overlay.style.display = "block"; drawer.classList.add("open"); }); overlay.addEventListener("click", () => { overlay.style.display = "none"; drawer.classList.remove("open"); }); document.querySelectorAll(".drawer-item").forEach(item => { item.addEventListener("click", () => { overlay.style.display = "none"; drawer.classList.remove("open"); let action = item.dataset.action; if (action === "daily") showDailyModal(); if (action === "pass") showPassModal(); if (action === "shop") showShopModal(); if (action === "codes") showCodesModal(); if (action === "theme") { document.body.classList.toggle("dark"); saveGame(); } if (action === "reset") resetGameWithConfirm(); }); }); }
     function initTabs() { document.querySelectorAll(".tab-btn").forEach(btn => { btn.addEventListener("click", () => { let tab = btn.dataset.tab; document.querySelectorAll(".section").forEach(sec => sec.classList.remove("active")); document.getElementById(`${tab}Section`).classList.add("active"); document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active")); btn.classList.add("active"); if (tab === "market") { currentMarket = generateMarket(); renderMarket(); } if (tab === "spareMarket") { currentSpareMarket = generateSpareMarket(); renderSpareMarket(); } }); }); }
-
     function showNicknameModal() { let modal = document.createElement("div"); modal.className = "modal-overlay"; modal.innerHTML = `<div class="nickname-modal" style="max-width:340px;width:90%;background:white;border-radius:48px;padding:24px;"><h2>👋 Добро пожаловать в iDealer Pro!</h2><p>Как тебя зовут?</p><input type="text" id="nickInput" class="code-input" placeholder="Введи никнейм" maxlength="20" value="Мастер" style="width:100%;margin:16px 0;"><button id="saveNickBtn" style="background:#2ecc71;width:100%;padding:14px;border-radius:60px;border:none;color:white;font-weight:bold;">🚀 НАЧАТЬ ИГРУ</button></div>`; document.body.appendChild(modal); document.getElementById("saveNickBtn").addEventListener("click", () => { let nick = document.getElementById("nickInput").value.trim() || "Мастер"; userNickname = nick; saveGame(); modal.remove(); currentMarket = generateMarket(); currentSpareMarket = generateSpareMarket(); updateUI(); loadFriends(); }); }
 
     if (!loadGame() || !userNickname) { showNicknameModal(); } else { currentMarket = generateMarket(); currentSpareMarket = generateSpareMarket(); updateUI(); loadFriends(); }
