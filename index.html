@@ -80,7 +80,6 @@
         .leaderboard-top-3 { background: linear-gradient(135deg, #cd7f32, #b87333); color: #1a1a2e; }
         body.dark .leaderboard-item, body.dark .friend-item, body.dark .club-item { background: #0f1724; color: #e2e8f0; }
         
-        /* Игры */
         .game-card { background: linear-gradient(135deg, #f39c12, #e67e22); border-radius: 24px; padding: 20px; margin: 12px 0; text-align: center; cursor: pointer; transition: transform 0.1s; color: white; }
         .game-card:active { transform: scale(0.97); }
         .game-icon { font-size: 3rem; margin-bottom: 10px; }
@@ -164,8 +163,7 @@
     let friendsList = [];
     let clubs = [];
     let myClub = null;
-    let cachedLeaderboard = [];
-    let leaderboardLoading = false;
+    let leaderboardData = [];
     
     // ========== БАЗА УСТРОЙСТВ ==========
     const DEVICES_DB = [
@@ -184,7 +182,6 @@
     const COND_MOD = { "Бит экран": 0.45, "Хорошее": 0.85, "Идеальное": 1.3 };
     const COND_COLORS = { "Бит экран": "#e74c3c", "Хорошее": "#2ecc71", "Идеальное": "#3498db" };
     
-    // ========== ЗАПЧАСТИ ==========
     function generateSpareMarket() { 
         let offers = []; 
         for (let i = 0; i < 8; i++) { 
@@ -197,7 +194,7 @@
         return offers; 
     }
     
-    // ========== КЛУБЫ ==========
+    // ========== КЛУБЫ (ГЛОБАЛЬНЫЕ) ==========
     const RANK_NAMES = { 5: "👑 Создатель", 4: "⭐ Совладелец", 3: "🛡️ Старший", 2: "🔰 Участник", 1: "🌱 Новичок" };
     
     async function loadGlobalClubs() {
@@ -209,7 +206,7 @@
                 myClub = clubs.find(c => c.members?.some(m => m.username === userNickname));
                 saveClubsLocal();
             }
-        } catch(e) { console.log(e); }
+        } catch(e) { console.log("Ошибка загрузки клубов:", e); }
     }
     
     async function saveGlobalClubs() {
@@ -220,7 +217,7 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ action: "saveClubs", clubs: clubs })
             });
-        } catch(e) { console.log(e); }
+        } catch(e) { console.log("Ошибка сохранения клубов:", e); }
     }
     
     function saveClubsLocal() {
@@ -320,131 +317,141 @@
     }
     
     async function showClubsModal() {
-        await loadGlobalClubs();
         let modal = document.createElement("div");
         modal.className = "modal-overlay";
-        let html = `<div class="fullscreen-modal"><div class="fullscreen-header"><h3>🏛️ КЛУБЫ</h3><button id="closeClubs" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body">`;
-        
-        if (myClub) {
-            html += `<div class="club-item" style="flex-direction:column;align-items:flex-start;">
-                        <strong>📛 ${myClub.name}</strong>
-                        <small>👑 Создатель: ${myClub.owner}</small>
-                        <small>👥 Участников: ${myClub.members.length}/20</small>
-                        <small>💰 Бюджет: ${myClub.budget.toLocaleString()} ₽</small>
-                        <small>💰 Налог: ${myClub.taxRate}% с продаж</small>
-                        <div style="margin-top:10px; width:100%;">
-                            <input type="number" id="donateAmount" placeholder="Сумма" style="width:60%;padding:8px;border-radius:40px;border:1px solid #ccc;">
-                            <button id="donateBtn" style="background:#2ecc71;padding:8px 16px;border-radius:40px;">💰 Пожертвовать</button>
-                        </div>
-                        <div id="membersList" style="margin-top:10px; width:100%;"><strong>📋 УЧАСТНИКИ:</strong><br>`;
-            myClub.members.forEach(m => {
-                let isSelf = m.username === userNickname;
-                let canManage = myClub.owner === userNickname || (myClub.members.find(mm => mm.username === userNickname)?.rank >= 4);
-                html += `<div style="display:flex;justify-content:space-between;align-items:center;margin:5px 0;padding:8px;background:#f0f2f5;border-radius:16px;">
-                            <span><span class="rank-${m.rank}">${RANK_NAMES[m.rank]}</span> ${m.username}${isSelf ? " (Вы)" : ""}</span>
-                            ${canManage && !isSelf ? `<div>
-                                <select class="rank-select" data-user="${m.username}" style="padding:4px;border-radius:20px;">
-                                    <option value="5">👑 Создатель</option>
-                                    <option value="4">⭐ Совладелец</option>
-                                    <option value="3">🛡️ Старший</option>
-                                    <option value="2">🔰 Участник</option>
-                                    <option value="1">🌱 Новичок</option>
-                                </select>
-                                <button class="kick-btn" data-user="${m.username}" style="background:#e74c3c;padding:4px 10px;border-radius:30px;margin-left:5px;">❌</button>
-                            </div>` : ''}
-                        </div>`;
-            });
-            html += `</div>`;
-            if (myClub.owner === userNickname) {
-                html += `<div style="margin-top:10px;"><input type="number" id="taxRate" placeholder="Налог %" value="${myClub.taxRate}" style="width:60%;padding:8px;border-radius:40px;"><button id="setTaxBtn" style="background:#f39c12;padding:8px 16px;border-radius:40px;">💰 Установить налог</button></div>`;
-            }
-            html += `<button id="leaveClubBtn" style="margin-top:10px;background:#e74c3c;padding:10px;border-radius:40px;width:100%;">🚪 Покинуть клуб</button>`;
-        } else {
-            html += `<div style="margin:16px 0;"><input type="text" id="newClubName" class="code-input" placeholder="Название нового клуба"><button id="createClubBtn" style="background:#9b59b6;padding:10px;border-radius:40px;margin-top:5px;">🏛️ СОЗДАТЬ КЛУБ</button></div>`;
-            html += `<div><input type="text" id="joinClubName" class="code-input" placeholder="Название клуба для вступления"><button id="joinClubBtn" style="background:#2ecc71;padding:10px;border-radius:40px;margin-top:5px;">🤝 ВСТУПИТЬ</button></div>`;
-        }
-        
-        html += `<h4 style="margin-top:16px;">📋 ПОПУЛЯРНЫЕ КЛУБЫ:</h4>`;
-        const sortedClubs = [...clubs].sort((a, b) => (b.members?.length || 0) - (a.members?.length || 0)).slice(0, 10);
-        sortedClubs.forEach(c => {
-            html += `<div class="club-item" style="justify-content:space-between;">
-                        <div><strong>${c.name}</strong><br><small>👑 ${c.owner} | 👥 ${c.members?.length || 0}/20</small></div>
-                        ${!myClub ? `<button class="join-existing" data-name="${c.name}" style="background:#2ecc71;border:none;padding:4px 12px;border-radius:30px;">Вступить</button>` : ''}
-                    </div>`;
-        });
-        
-        html += `<div><input type="text" id="searchClub" class="code-input" placeholder="🔍 Поиск клуба"><button id="searchClubBtn" style="background:#3498db;padding:10px;border-radius:40px;margin-top:5px;">Найти</button><div id="searchResult"></div></div>`;
-        
-        html += `</div></div>`;
-        modal.innerHTML = html;
+        modal.innerHTML = `<div class="fullscreen-modal"><div class="fullscreen-header"><h3>🏛️ КЛУБЫ</h3><button id="closeClubs" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body" id="clubsBody"><div style="text-align:center;padding:20px;">🏛️ Загрузка...</div></div></div>`;
         document.body.appendChild(modal);
         
-        document.getElementById("createClubBtn")?.addEventListener("click", async () => {
-            const name = document.getElementById("newClubName").value.trim();
-            if (name) await createClub(name);
-            modal.remove();
-            setTimeout(() => showClubsModal(), 500);
-        });
-        document.getElementById("joinClubBtn")?.addEventListener("click", async () => {
-            const name = document.getElementById("joinClubName").value.trim();
-            if (name) await joinClub(name);
-            modal.remove();
-            setTimeout(() => showClubsModal(), 500);
-        });
-        document.getElementById("donateBtn")?.addEventListener("click", async () => {
-            let amount = parseInt(document.getElementById("donateAmount").value);
-            if (amount) await donateToClub(amount);
-            modal.remove();
-            setTimeout(() => showClubsModal(), 500);
-        });
-        document.getElementById("leaveClubBtn")?.addEventListener("click", async () => {
-            await leaveClub();
-            modal.remove();
-            setTimeout(() => showClubsModal(), 500);
-        });
-        document.getElementById("setTaxBtn")?.addEventListener("click", async () => {
-            let tax = parseInt(document.getElementById("taxRate").value);
-            if (tax) await setClubTax(tax);
-            modal.remove();
-            setTimeout(() => showClubsModal(), 500);
-        });
-        document.querySelectorAll(".rank-select")?.forEach(sel => {
-            sel.addEventListener("change", async () => {
-                await changeMemberRank(myClub.name, sel.dataset.user, parseInt(sel.value));
-                modal.remove();
-                setTimeout(() => showClubsModal(), 500);
-            });
-        });
-        document.querySelectorAll(".kick-btn")?.forEach(btn => {
-            btn.addEventListener("click", async () => {
-                if (confirm("Исключить игрока?")) await kickFromClub(myClub.name, btn.dataset.user);
-                modal.remove();
-                setTimeout(() => showClubsModal(), 500);
-            });
-        });
-        document.querySelectorAll(".join-existing").forEach(btn => {
-            btn.addEventListener("click", async () => {
-                await joinClub(btn.dataset.name);
-                modal.remove();
-                setTimeout(() => showClubsModal(), 500);
-            });
-        });
-        document.getElementById("searchClubBtn")?.addEventListener("click", () => {
-            const query = document.getElementById("searchClub").value.trim().toLowerCase();
-            const found = clubs.filter(c => c.name.toLowerCase().includes(query));
-            const resultDiv = document.getElementById("searchResult");
-            if (found.length === 0) resultDiv.innerHTML = "<div class='club-item'>❌ Клуб не найден</div>";
-            else {
-                resultDiv.innerHTML = found.map(c => `<div class="club-item" style="display:flex;justify-content:space-between;"><div><strong>${c.name}</strong><br><small>👑 ${c.owner} | 👥 ${c.members?.length || 0}/20</small></div>${!myClub ? `<button class="join-found" data-name="${c.name}" style="background:#2ecc71;border:none;padding:4px 12px;border-radius:30px;">Вступить</button>` : ''}</div>`).join('');
-                document.querySelectorAll(".join-found").forEach(btn => {
-                    btn.addEventListener("click", async () => {
-                        await joinClub(btn.dataset.name);
-                        modal.remove();
-                        setTimeout(() => showClubsModal(), 500);
-                    });
+        // Показываем "Загрузка..." и параллельно загружаем данные
+        setTimeout(async () => {
+            await loadGlobalClubs();
+            let html = "";
+            
+            if (myClub) {
+                html += `<div class="club-item" style="flex-direction:column;align-items:flex-start;">
+                            <strong>📛 ${myClub.name}</strong>
+                            <small>👑 Создатель: ${myClub.owner}</small>
+                            <small>👥 Участников: ${myClub.members.length}/20</small>
+                            <small>💰 Бюджет: ${myClub.budget.toLocaleString()} ₽</small>
+                            <small>💰 Налог: ${myClub.taxRate}% с продаж</small>
+                            <div style="margin-top:10px; width:100%;">
+                                <input type="number" id="donateAmount" placeholder="Сумма" style="width:60%;padding:8px;border-radius:40px;border:1px solid #ccc;">
+                                <button id="donateBtn" style="background:#2ecc71;padding:8px 16px;border-radius:40px;">💰 Пожертвовать</button>
+                            </div>
+                            <div id="membersList" style="margin-top:10px; width:100%;"><strong>📋 УЧАСТНИКИ:</strong><br>`;
+                myClub.members.forEach(m => {
+                    let isSelf = m.username === userNickname;
+                    let canManage = myClub.owner === userNickname || (myClub.members.find(mm => mm.username === userNickname)?.rank >= 4);
+                    html += `<div style="display:flex;justify-content:space-between;align-items:center;margin:5px 0;padding:8px;background:#f0f2f5;border-radius:16px;">
+                                <span><span class="rank-${m.rank}">${RANK_NAMES[m.rank]}</span> ${m.username}${isSelf ? " (Вы)" : ""}</span>
+                                ${canManage && !isSelf ? `<div>
+                                    <select class="rank-select" data-user="${m.username}" style="padding:4px;border-radius:20px;">
+                                        <option value="5">👑 Создатель</option>
+                                        <option value="4">⭐ Совладелец</option>
+                                        <option value="3">🛡️ Старший</option>
+                                        <option value="2">🔰 Участник</option>
+                                        <option value="1">🌱 Новичок</option>
+                                    </select>
+                                    <button class="kick-btn" data-user="${m.username}" style="background:#e74c3c;padding:4px 10px;border-radius:30px;margin-left:5px;">❌</button>
+                                </div>` : ''}
+                            </div>`;
+                });
+                html += `</div>`;
+                if (myClub.owner === userNickname) {
+                    html += `<div style="margin-top:10px;"><input type="number" id="taxRate" placeholder="Налог %" value="${myClub.taxRate}" style="width:60%;padding:8px;border-radius:40px;"><button id="setTaxBtn" style="background:#f39c12;padding:8px 16px;border-radius:40px;">💰 Установить налог</button></div>`;
+                }
+                html += `<button id="leaveClubBtn" style="margin-top:10px;background:#e74c3c;padding:10px;border-radius:40px;width:100%;">🚪 Покинуть клуб</button>`;
+            } else {
+                html += `<div style="margin:16px 0;"><input type="text" id="newClubName" class="code-input" placeholder="Название нового клуба"><button id="createClubBtn" style="background:#9b59b6;padding:10px;border-radius:40px;margin-top:5px;">🏛️ СОЗДАТЬ КЛУБ</button></div>`;
+                html += `<div><input type="text" id="joinClubName" class="code-input" placeholder="Название клуба для вступления"><button id="joinClubBtn" style="background:#2ecc71;padding:10px;border-radius:40px;margin-top:5px;">🤝 ВСТУПИТЬ</button></div>`;
+            }
+            
+            html += `<h4 style="margin-top:16px;">📋 ПОПУЛЯРНЫЕ КЛУБЫ:</h4>`;
+            const sortedClubs = [...clubs].sort((a, b) => (b.members?.length || 0) - (a.members?.length || 0)).slice(0, 10);
+            if (sortedClubs.length === 0) {
+                html += `<div class="club-item">❌ Нет созданных клубов. Создай первый!</div>`;
+            } else {
+                sortedClubs.forEach(c => {
+                    html += `<div class="club-item" style="justify-content:space-between;">
+                                <div><strong>${c.name}</strong><br><small>👑 ${c.owner} | 👥 ${c.members?.length || 0}/20</small></div>
+                                ${!myClub ? `<button class="join-existing" data-name="${c.name}" style="background:#2ecc71;border:none;padding:4px 12px;border-radius:30px;">Вступить</button>` : ''}
+                            </div>`;
                 });
             }
-        });
+            
+            html += `<div style="margin-top:16px;"><input type="text" id="searchClub" class="code-input" placeholder="🔍 Поиск клуба"><button id="searchClubBtn" style="background:#3498db;padding:10px;border-radius:40px;margin-top:5px;">Найти</button><div id="searchResult"></div></div>`;
+            
+            const clubsBody = document.getElementById("clubsBody");
+            if (clubsBody) clubsBody.innerHTML = html;
+            
+            document.getElementById("createClubBtn")?.addEventListener("click", async () => {
+                const name = document.getElementById("newClubName").value.trim();
+                if (name) await createClub(name);
+                modal.remove();
+                setTimeout(() => showClubsModal(), 500);
+            });
+            document.getElementById("joinClubBtn")?.addEventListener("click", async () => {
+                const name = document.getElementById("joinClubName").value.trim();
+                if (name) await joinClub(name);
+                modal.remove();
+                setTimeout(() => showClubsModal(), 500);
+            });
+            document.getElementById("donateBtn")?.addEventListener("click", async () => {
+                let amount = parseInt(document.getElementById("donateAmount").value);
+                if (amount) await donateToClub(amount);
+                modal.remove();
+                setTimeout(() => showClubsModal(), 500);
+            });
+            document.getElementById("leaveClubBtn")?.addEventListener("click", async () => {
+                await leaveClub();
+                modal.remove();
+                setTimeout(() => showClubsModal(), 500);
+            });
+            document.getElementById("setTaxBtn")?.addEventListener("click", async () => {
+                let tax = parseInt(document.getElementById("taxRate").value);
+                if (tax) await setClubTax(tax);
+                modal.remove();
+                setTimeout(() => showClubsModal(), 500);
+            });
+            document.querySelectorAll(".rank-select")?.forEach(sel => {
+                sel.addEventListener("change", async () => {
+                    await changeMemberRank(myClub.name, sel.dataset.user, parseInt(sel.value));
+                    modal.remove();
+                    setTimeout(() => showClubsModal(), 500);
+                });
+            });
+            document.querySelectorAll(".kick-btn")?.forEach(btn => {
+                btn.addEventListener("click", async () => {
+                    if (confirm("Исключить игрока?")) await kickFromClub(myClub.name, btn.dataset.user);
+                    modal.remove();
+                    setTimeout(() => showClubsModal(), 500);
+                });
+            });
+            document.querySelectorAll(".join-existing").forEach(btn => {
+                btn.addEventListener("click", async () => {
+                    await joinClub(btn.dataset.name);
+                    modal.remove();
+                    setTimeout(() => showClubsModal(), 500);
+                });
+            });
+            document.getElementById("searchClubBtn")?.addEventListener("click", async () => {
+                const query = document.getElementById("searchClub").value.trim().toLowerCase();
+                const found = clubs.filter(c => c.name.toLowerCase().includes(query));
+                const resultDiv = document.getElementById("searchResult");
+                if (found.length === 0) resultDiv.innerHTML = "<div class='club-item'>❌ Клуб не найден</div>";
+                else {
+                    resultDiv.innerHTML = found.map(c => `<div class="club-item" style="display:flex;justify-content:space-between;"><div><strong>${c.name}</strong><br><small>👑 ${c.owner} | 👥 ${c.members?.length || 0}/20</small></div>${!myClub ? `<button class="join-found" data-name="${c.name}" style="background:#2ecc71;border:none;padding:4px 12px;border-radius:30px;">Вступить</button>` : ''}</div>`).join('');
+                    document.querySelectorAll(".join-found").forEach(btn => {
+                        btn.addEventListener("click", async () => {
+                            await joinClub(btn.dataset.name);
+                            modal.remove();
+                            setTimeout(() => showClubsModal(), 500);
+                        });
+                    });
+                }
+            });
+        }, 50);
+        
         document.getElementById("closeClubs").addEventListener("click", () => modal.remove());
     }
     
@@ -501,9 +508,7 @@
         document.getElementById("closeFriends").addEventListener("click", () => modal.remove());
     }
     
-    // ========== ЛИДЕРБОРД (МГНОВЕННОЕ ОТКРЫТИЕ) ==========
-    let leaderboardData = [];
-    
+    // ========== ЛИДЕРБОРД ==========
     async function sendToLeaderboard() {
         try {
             await fetch(LEADERBOARD_URL, {
@@ -533,7 +538,6 @@
         modal.innerHTML = `<div class="fullscreen-modal"><div class="fullscreen-header"><h3>🏆 ГЛОБАЛЬНЫЙ ЛИДЕРБОРД 🏆</h3><button id="closeLeaderboard" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body" id="leaderboardBody"><div style="text-align:center;padding:20px;">🏆 Загрузка...</div></div></div>`;
         document.body.appendChild(modal);
         
-        // Показываем "Загрузка..." и параллельно загружаем данные
         setTimeout(async () => {
             const leaderboard = await loadLeaderboardData();
             let html = `<div style="margin-bottom: 16px; text-align:center; font-weight:bold;">🌍 ТОП-50 ПЕРЕКУПОВ МИРА 🌍</div>`;
@@ -576,7 +580,6 @@
     }
     
     // ========== ИГРЫ ==========
-    // Слоты
     function showSlotsGame() {
         let modal = document.createElement("div");
         modal.className = "modal-overlay";
@@ -650,7 +653,6 @@
         document.getElementById("closeSlots").addEventListener("click", () => modal.remove());
     }
     
-    // Орел/Решка
     function showCoinGame() {
         let modal = document.createElement("div");
         modal.className = "modal-overlay";
@@ -699,7 +701,6 @@
         document.getElementById("closeCoin").addEventListener("click", () => modal.remove());
     }
     
-    // Угадай число
     function showGuessGame() {
         let secretNumber = Math.floor(Math.random() * 100) + 1;
         let attempts = 0;
@@ -1087,7 +1088,7 @@
         document.body.appendChild(modal); 
         const input = document.getElementById("nickInput");
         input.focus();
-        document.getElementById("saveNickBtn").addEventListener("click", () => { 
+        document.getElementById("saveNickBtn").addEventListener("click", async () => { 
             let nick = document.getElementById("nickInput").value.trim(); 
             if (!nick) {
                 showToast("❌ Введи никнейм!", "#e74c3c");
@@ -1100,10 +1101,9 @@
             currentSpareMarket = generateSpareMarket(); 
             updateUI(); 
             loadFriends(); 
-            loadClubsLocal();
-            loadLeaderboardData();
+            await loadGlobalClubs();
         }); 
-        input.addEventListener("keypress", (e) => {
+        input.addEventListener("keypress", async (e) => {
             if (e.key === "Enter") {
                 let nick = input.value.trim();
                 if (nick) {
@@ -1114,8 +1114,7 @@
                     currentSpareMarket = generateSpareMarket();
                     updateUI();
                     loadFriends();
-                    loadClubsLocal();
-                    loadLeaderboardData();
+                    await loadGlobalClubs();
                 } else {
                     showToast("❌ Введи никнейм!", "#e74c3c");
                 }
@@ -1124,21 +1123,22 @@
     }
     
     // ЗАПУСК
-    if (!loadGame() || !userNickname) { 
-        showNicknameModal(); 
-    } else { 
-        currentMarket = generateMarket(); 
-        currentSpareMarket = generateSpareMarket(); 
-        updateUI(); 
-        loadFriends(); 
-        loadClubsLocal();
-        loadLeaderboardData();
-    }
-    initTabs(); 
-    initDrawer();
-    document.getElementById("profileBtn").addEventListener("click", showProfile);
-    document.getElementById("leaderboardBtn").addEventListener("click", showGlobalLeaderboardModal);
-    document.getElementById("friendsBtn").addEventListener("click", showFriendsModal);
+    (async () => {
+        if (!loadGame() || !userNickname) { 
+            showNicknameModal(); 
+        } else { 
+            currentMarket = generateMarket(); 
+            currentSpareMarket = generateSpareMarket(); 
+            updateUI(); 
+            loadFriends(); 
+            await loadGlobalClubs();
+        }
+        initTabs(); 
+        initDrawer();
+        document.getElementById("profileBtn").addEventListener("click", showProfile);
+        document.getElementById("leaderboardBtn").addEventListener("click", showGlobalLeaderboardModal);
+        document.getElementById("friendsBtn").addEventListener("click", showFriendsModal);
+    })();
 </script>
 </body>
 </html>
