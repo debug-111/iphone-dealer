@@ -5,32 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>iDealer Pro — Симулятор перекупа</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #e9eef3 100%);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-            padding: 12px;
-            min-height: 100vh;
-            transition: all 0.3s;
-        }
-        body.dark {
-            background: linear-gradient(135deg, #0a0f1a 0%, #0f1724 100%);
-            color: #e2e8f0;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        body { background: linear-gradient(135deg, #f5f7fa 0%, #e9eef3 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; padding: 12px; min-height: 100vh; transition: all 0.3s; }
+        body.dark { background: linear-gradient(135deg, #0a0f1a 0%, #0f1724 100%); color: #e2e8f0; }
         body.dark .level-card, body.dark .market-item, body.dark .phone-card,
         body.dark .offers-modal, body.dark .profile-content, body.dark .nickname-modal,
-        body.dark .shop-modal, body.dark .fullscreen-modal, body.dark .leaderboard-item,
-        body.dark .task-item, body.dark .friend-item, body.dark .club-item,
-        body.dark .slot-reel, body.dark .admin-panel {
-            background: #1e293b;
-            color: #e2e8f0;
-        }
+        body.dark .fullscreen-modal, body.dark .leaderboard-item, body.dark .friend-item,
+        body.dark .club-item, body.dark .admin-panel { background: #1e293b; color: #e2e8f0; }
         body.dark .tab-btn { background: #1e293b; color: #94a3b8; }
         body.dark .tab-btn.active { background: linear-gradient(135deg, #f39c12, #e67e22); color: white; }
         body.dark .condition-badge { background: #0f1724; color: #e2e8f0; }
@@ -40,260 +21,53 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes floatMoney { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-80px) scale(1.2); } }
         @keyframes spinSlot { 0% { transform: translateY(0); } 100% { transform: translateY(-500%); } }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
         
         .container { max-width: 550px; margin: 0 auto; animation: slideUp 0.4s ease-out; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 8px; flex-wrap: wrap; }
+        .menu-btn, .leaderboard-btn, .profile-btn, .friends-btn { background: linear-gradient(135deg, #2c3e50, #1a252f); border: none; width: 48px; height: 48px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; transition: transform 0.1s; }
+        .menu-btn:active, .leaderboard-btn:active, .profile-btn:active, .friends-btn:active { transform: scale(0.95); }
+        .balance-box { background: linear-gradient(135deg, #2ecc71, #27ae60); padding: 8px 16px; border-radius: 50px; font-weight: bold; font-size: 1.2rem; color: white; flex: 1; text-align: center; }
         
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .menu-btn, .leaderboard-btn, .profile-btn, .friends-btn {
-            background: linear-gradient(135deg, #2c3e50, #1a252f);
-            border: none;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            font-size: 1.2rem;
-            cursor: pointer;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.1s;
-        }
-        .menu-btn:active, .leaderboard-btn:active, .profile-btn:active, .friends-btn:active {
-            transform: scale(0.95);
-        }
-        .balance-box {
-            background: linear-gradient(135deg, #2ecc71, #27ae60);
-            padding: 8px 16px;
-            border-radius: 50px;
-            font-weight: bold;
-            font-size: 1.2rem;
-            color: white;
-            flex: 1;
-            text-align: center;
-        }
+        .level-card { background: white; border-radius: 24px; padding: 12px 16px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .level-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: bold; font-size: 0.9rem; }
+        .exp-bar-bg { background: #e0e7ef; border-radius: 20px; height: 8px; overflow: hidden; }
+        .exp-fill { background: linear-gradient(90deg, #f39c12, #e67e22); width: 0%; height: 100%; border-radius: 20px; transition: width 0.4s ease; }
         
-        .level-card {
-            background: white;
-            border-radius: 24px;
-            padding: 12px 16px;
-            margin-bottom: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        }
-        .level-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-weight: bold;
-            font-size: 0.9rem;
-        }
-        .exp-bar-bg {
-            background: #e0e7ef;
-            border-radius: 20px;
-            height: 8px;
-            overflow: hidden;
-        }
-        .exp-fill {
-            background: linear-gradient(90deg, #f39c12, #e67e22);
-            width: 0%;
-            height: 100%;
-            border-radius: 20px;
-            transition: width 0.4s ease;
-        }
-        
-        .tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-        }
-        .tab-btn {
-            flex: 1;
-            background: white;
-            border: none;
-            padding: 10px 6px;
-            border-radius: 50px;
-            font-size: 0.7rem;
-            font-weight: bold;
-            cursor: pointer;
-            min-width: 85px;
-            transition: all 0.2s;
-        }
+        .tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+        .tab-btn { flex: 1; background: white; border: none; padding: 10px 6px; border-radius: 50px; font-size: 0.7rem; font-weight: bold; cursor: pointer; min-width: 85px; transition: all 0.2s; }
         .tab-btn:active { transform: scale(0.96); }
         
         .section { display: none; animation: slideUp 0.3s ease; }
         .section.active { display: block; }
         
-        .inventory-grid, .market-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            max-height: 450px;
-            overflow-y: auto;
-            padding: 4px;
-        }
-        .market-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 10px;
-        }
+        .inventory-grid, .market-grid { display: flex; flex-direction: column; gap: 12px; max-height: 450px; overflow-y: auto; padding: 4px; }
+        .market-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
         
-        .phone-card {
-            background: white;
-            border-radius: 20px;
-            padding: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 4px solid;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        }
+        .phone-card { background: white; border-radius: 20px; padding: 12px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .phone-info { flex: 1; }
-        .phone-actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-        }
-        .sell-btn, .repair-btn {
-            border: none;
-            padding: 8px 14px;
-            border-radius: 40px;
-            font-weight: bold;
-            color: white;
-            cursor: pointer;
-            font-size: 0.7rem;
-        }
+        .phone-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+        .sell-btn, .repair-btn { border: none; padding: 8px 14px; border-radius: 40px; font-weight: bold; color: white; cursor: pointer; font-size: 0.7rem; transition: transform 0.1s; }
+        .sell-btn:active, .repair-btn:active { transform: scale(0.95); }
         .sell-btn { background: #e67e22; }
         .repair-btn { background: #3498db; }
-        .condition-badge {
-            font-size: 0.65rem;
-            padding: 3px 10px;
-            border-radius: 20px;
-            background: #f0f2f5;
-            display: inline-block;
-            margin-top: 4px;
-        }
-        .market-item {
-            background: white;
-            border-radius: 18px;
-            padding: 10px;
-            text-align: center;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-            cursor: pointer;
-        }
-        .price-tag {
-            font-size: 1rem;
-            font-weight: bold;
-            color: #e67e22;
-            margin: 6px 0;
-        }
-        .buy-btn {
-            background: #2ecc71;
-            width: 100%;
-            padding: 6px;
-            border-radius: 40px;
-            border: none;
-            font-weight: bold;
-            color: white;
-            cursor: pointer;
-            font-size: 0.75rem;
-        }
+        .condition-badge { font-size: 0.65rem; padding: 3px 10px; border-radius: 20px; background: #f0f2f5; display: inline-block; margin-top: 4px; }
+        .market-item { background: white; border-radius: 18px; padding: 10px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.06); cursor: pointer; transition: transform 0.1s; }
+        .market-item:active { transform: scale(0.97); }
+        .price-tag { font-size: 1rem; font-weight: bold; color: #e67e22; margin: 6px 0; }
+        .buy-btn { background: #2ecc71; width: 100%; padding: 6px; border-radius: 40px; border: none; font-weight: bold; color: white; cursor: pointer; font-size: 0.75rem; transition: transform 0.1s; }
+        .buy-btn:active { transform: scale(0.95); }
         
-        .drawer-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.4);
-            backdrop-filter: blur(4px);
-            z-index: 1000;
-            display: none;
-        }
-        .drawer-menu {
-            position: fixed;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            width: 270px;
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(20px);
-            z-index: 1001;
-            transform: translateX(-100%);
-            transition: transform 0.3s ease;
-            overflow-y: auto;
-            padding: 20px;
-            border-radius: 0 28px 28px 0;
-        }
+        .drawer-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 1000; display: none; }
+        .drawer-menu { position: fixed; top: 0; left: 0; bottom: 0; width: 270px; background: rgba(255,255,255,0.95); backdrop-filter: blur(20px); z-index: 1001; transform: translateX(-100%); transition: transform 0.3s ease; overflow-y: auto; padding: 20px; border-radius: 0 28px 28px 0; }
         body.dark .drawer-menu { background: rgba(30,41,59,0.95); }
         .drawer-menu.open { transform: translateX(0); }
-        .drawer-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            margin: 8px 0;
-            border-radius: 24px;
-            background: rgba(0,0,0,0.05);
-            cursor: pointer;
-        }
+        .drawer-item { display: flex; align-items: center; gap: 12px; padding: 12px; margin: 8px 0; border-radius: 24px; background: rgba(0,0,0,0.05); cursor: pointer; transition: background 0.1s; }
         .drawer-item:active { background: rgba(0,0,0,0.1); transform: scale(0.97); }
         
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.85);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            animation: fadeIn 0.2s;
-        }
-        .fullscreen-modal {
-            background: white;
-            border-radius: 32px 32px 0 0;
-            width: 100%;
-            max-width: 550px;
-            height: 90vh;
-            display: flex;
-            flex-direction: column;
-            animation: slideUp 0.2s;
-            overflow: hidden;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            margin: auto;
-            top: auto;
-            border-radius: 28px 28px 0 0;
-        }
-        .fullscreen-header {
-            padding: 16px;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            background: inherit;
-            z-index: 10;
-        }
-        .fullscreen-body {
-            flex: 1;
-            overflow-y: auto;
-            padding: 16px;
-        }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 2000; animation: fadeIn 0.2s; }
+        .fullscreen-modal { background: white; border-radius: 32px 32px 0 0; width: 100%; max-width: 550px; height: 90vh; display: flex; flex-direction: column; animation: slideUp 0.2s; overflow: hidden; position: fixed; bottom: 0; left: 0; right: 0; margin: auto; top: auto; border-radius: 28px 28px 0 0; }
+        .fullscreen-header { padding: 16px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: inherit; z-index: 10; }
+        .fullscreen-body { flex: 1; overflow-y: auto; padding: 16px; }
         
         .leaderboard-item, .friend-item, .club-item {
             display: flex;
@@ -308,30 +82,14 @@
             flex-wrap: wrap;
             gap: 8px;
         }
-        .leaderboard-rank {
-            font-weight: bold;
-            width: 45px;
-            font-size: 1.1rem;
-        }
+        .leaderboard-rank { font-weight: bold; width: 45px; font-size: 1.1rem; }
         .leaderboard-name { flex: 1; font-weight: 500; }
         .leaderboard-profit { color: #2ecc71; font-weight: bold; }
         .leaderboard-level { color: #f39c12; margin-left: 10px; }
-        .leaderboard-top-1 {
-            background: linear-gradient(135deg, #ffd700, #ffb347);
-            color: #1a1a2e;
-        }
-        .leaderboard-top-2 {
-            background: linear-gradient(135deg, #c0c0c0, #a0a0a0);
-            color: #1a1a2e;
-        }
-        .leaderboard-top-3 {
-            background: linear-gradient(135deg, #cd7f32, #b87333);
-            color: #1a1a2e;
-        }
-        body.dark .leaderboard-item, body.dark .friend-item, body.dark .club-item {
-            background: #0f1724;
-            color: #e2e8f0;
-        }
+        .leaderboard-top-1 { background: linear-gradient(135deg, #ffd700, #ffb347); color: #1a1a2e; }
+        .leaderboard-top-2 { background: linear-gradient(135deg, #c0c0c0, #a0a0a0); color: #1a1a2e; }
+        .leaderboard-top-3 { background: linear-gradient(135deg, #cd7f32, #b87333); color: #1a1a2e; }
+        body.dark .leaderboard-item, body.dark .friend-item, body.dark .club-item { background: #0f1724; color: #e2e8f0; }
         
         .game-card {
             background: linear-gradient(135deg, #f39c12, #e67e22);
@@ -346,85 +104,18 @@
         .game-card:active { transform: scale(0.97); }
         .game-icon { font-size: 3rem; margin-bottom: 10px; }
         
-        .slot-machine {
-            background: #2c3e50;
-            border-radius: 24px;
-            padding: 20px;
-            text-align: center;
-        }
-        .slot-reels {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin: 20px 0;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        .slot-reel {
-            width: 70px;
-            height: 90px;
-            background: white;
-            border-radius: 16px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
+        .slot-machine { background: #2c3e50; border-radius: 24px; padding: 20px; text-align: center; }
+        .slot-reels { display: flex; justify-content: center; gap: 15px; margin: 20px 0; flex-wrap: wrap; justify-content: center; }
+        .slot-reel { width: 70px; height: 90px; background: white; border-radius: 16px; overflow: hidden; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .slot-reel-inner { position: relative; transition: transform 0.3s ease-out; }
-        .slot-symbol {
-            height: 90px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-        }
-        .slot-btn {
-            background: #f39c12;
-            color: #1a1a2e;
-            font-weight: bold;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 40px;
-            font-size: 1rem;
-            cursor: pointer;
-            width: 100%;
-        }
+        .slot-symbol { height: 90px; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+        .slot-btn { background: #f39c12; color: #1a1a2e; font-weight: bold; border: none; padding: 12px 24px; border-radius: 40px; font-size: 1rem; cursor: pointer; width: 100%; }
         
-        .money-popup {
-            position: fixed;
-            pointer-events: none;
-            z-index: 3000;
-            font-weight: bold;
-            font-size: 1.1rem;
-            color: #2ecc71;
-            text-shadow: 0 0 3px black;
-            animation: floatMoney 0.8s ease-out forwards;
-        }
+        .money-popup { position: fixed; pointer-events: none; z-index: 3000; font-weight: bold; font-size: 1.1rem; color: #2ecc71; text-shadow: 0 0 3px black; animation: floatMoney 0.8s ease-out forwards; }
         button { cursor: pointer; transition: 0.1s; }
-        .close-btn {
-            background: #95a5a6;
-            padding: 12px;
-            border-radius: 40px;
-            border: none;
-            width: 100%;
-            margin-top: 12px;
-            font-weight: bold;
-            color: white;
-            cursor: pointer;
-        }
-        .code-input {
-            flex: 1;
-            padding: 10px;
-            border-radius: 40px;
-            border: 1px solid #ccc;
-            font-family: monospace;
-            background: white;
-            color: black;
-        }
-        body.dark .code-input {
-            background: #0f1724;
-            color: white;
-            border-color: #334155;
-        }
+        .close-btn { background: #95a5a6; padding: 12px; border-radius: 40px; border: none; width: 100%; margin-top: 12px; font-weight: bold; color: white; cursor: pointer; }
+        .code-input { flex: 1; padding: 10px; border-radius: 40px; border: 1px solid #ccc; font-family: monospace; background: white; color: black; }
+        body.dark .code-input { background: #0f1724; color: white; border-color: #334155; }
         
         .rank-5 { color: #ffd700; font-weight: bold; }
         .rank-4 { color: #c0c0c0; font-weight: bold; }
@@ -432,39 +123,11 @@
         .rank-2 { color: #2ecc71; }
         .rank-1 { color: #95a5a6; }
         
-        .admin-panel {
-            background: white;
-            border-radius: 28px;
-            padding: 20px;
-            width: 90%;
-            max-width: 400px;
-            max-height: 85vh;
-            overflow-y: auto;
-        }
-        .admin-section {
-            background: #f0f2f5;
-            border-radius: 20px;
-            padding: 15px;
-            margin: 15px 0;
-        }
+        .admin-panel { background: white; border-radius: 28px; padding: 20px; width: 90%; max-width: 400px; max-height: 85vh; overflow-y: auto; }
+        .admin-section { background: #f0f2f5; border-radius: 20px; padding: 15px; margin: 15px 0; }
         body.dark .admin-section { background: #0f1724; }
-        .admin-input {
-            padding: 10px;
-            border-radius: 40px;
-            border: 1px solid #ccc;
-            margin: 5px;
-            width: calc(100% - 10px);
-        }
-        .admin-btn {
-            background: #9b59b6;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 40px;
-            color: white;
-            font-weight: bold;
-            margin: 5px;
-            cursor: pointer;
-        }
+        .admin-input { padding: 10px; border-radius: 40px; border: 1px solid #ccc; margin: 5px; width: calc(100% - 10px); }
+        .admin-btn { background: #9b59b6; border: none; padding: 8px 16px; border-radius: 40px; color: white; font-weight: bold; margin: 5px; cursor: pointer; }
         .danger-btn { background: #e74c3c; }
         .success-btn { background: #2ecc71; }
         
@@ -476,7 +139,6 @@
             .sell-btn, .repair-btn { padding: 6px 10px; font-size: 0.6rem; }
             .slot-reel { width: 55px; height: 75px; }
             .slot-symbol { height: 75px; font-size: 1.5rem; }
-            .leaderboard-item { flex-wrap: wrap; }
         }
     </style>
 </head>
@@ -521,15 +183,22 @@
 </div>
 
 <script>
-    // ========== GOOGLE SHEETS API ==========
-    const LEADERBOARD_URL = "https://script.google.com/macros/s/AKfycby64ECX1Cg2d_gNMYJwOEcGi98acL67Wl6c1YjnB2gvtQkxG2Yiy2tMJulsgN0d_WG2-g/exec";
-    
+    // ========== БАЗОВЫЕ ПЕРЕМЕННЫЕ ==========
     let userNickname = "";
     let friendsList = [];
     let clubs = [];
     let myClub = null;
     let leaderboardData = [];
     let isAdmin = false;
+    let gameMoney = 5000;
+    let gameExp = 0;
+    let gameLevel = 1;
+    let gameInventory = [{ model: "iPhone 6", condition: "Бит экран", buyPrice: 1800, brokenPart: "Экран" }];
+    let gameParts = [];
+    let gameTotalSales = 0;
+    let gameTotalProfit = 0;
+    let currentMarketItems = [];
+    let currentSpareMarketItems = [];
     
     // ========== БАЗА УСТРОЙСТВ ==========
     const DEVICES_DB = [
@@ -548,280 +217,148 @@
     const COND_MOD = { "Бит экран": 0.45, "Хорошее": 0.85, "Идеальное": 1.3 };
     const COND_COLORS = { "Бит экран": "#e74c3c", "Хорошее": "#2ecc71", "Идеальное": "#3498db" };
     
-    function generateSpareMarket() { 
-        let offers = []; 
-        for (let i = 0; i < 8; i++) { 
-            let device = DEVICES_DB[Math.floor(Math.random() * DEVICES_DB.length)]; 
-            let repairTypes = ["Экран", "Батарея", "Камера", "Динамик", "Корпус"];
-            let partType = repairTypes[Math.floor(Math.random() * repairTypes.length)];
-            let price = Math.floor(device.base * 0.1 * (0.5 + Math.random())); 
-            offers.push({ id: Date.now() + i, phoneModel: device.model, partType: partType, supplier: ["🏪 Автосервис", "📦 Китай", "🔄 Б/у", "✨ Оригинал"][Math.floor(Math.random() * 4)], price: Math.max(300, price) }); 
-        } 
-        return offers; 
-    }
-    
-    // ========== КЛУБЫ (ГЛОБАЛЬНЫЕ) ==========
+    // ========== КЛУБЫ ==========
     const RANK_NAMES = { 5: "👑 Создатель", 4: "⭐ Совладелец", 3: "🛡️ Старший", 2: "🔰 Участник", 1: "🌱 Новичок" };
-    const RANK_PERMISSIONS = { 5: ["manage", "kick", "setTax"], 4: ["manage", "kick"], 3: [], 2: [], 1: [] };
     
-    async function loadGlobalClubs() {
-        try {
-            const response = await fetch(LEADERBOARD_URL + "?action=getClubs&t=" + Date.now());
-            const data = await response.json();
-            if (data.success) {
-                clubs = data.clubs || [];
-                myClub = clubs.find(c => c.members?.some(m => m.username === userNickname));
-                saveClubsLocal();
-            }
-        } catch(e) { console.log(e); }
-    }
-    
-    async function saveGlobalClubs() {
-        try {
-            await fetch(LEADERBOARD_URL, {
-                method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "saveClubs", clubs: clubs })
-            });
-        } catch(e) { console.log(e); }
-    }
-    
-    function saveClubsLocal() {
-        localStorage.setItem("clubs", JSON.stringify(clubs));
-        if (myClub) localStorage.setItem("myClub", JSON.stringify(myClub));
-    }
-    
-    function loadClubsLocal() {
+    function loadClubs() {
         const saved = localStorage.getItem("clubs");
         if (saved) clubs = JSON.parse(saved);
         const savedClub = localStorage.getItem("myClub");
         if (savedClub) myClub = JSON.parse(savedClub);
     }
     
-    function getUserRankInClub(club) {
-        if (!club) return 0;
-        const member = club.members.find(m => m.username === userNickname);
-        return member ? member.rank : 0;
+    function saveClubs() {
+        localStorage.setItem("clubs", JSON.stringify(clubs));
+        if (myClub) localStorage.setItem("myClub", JSON.stringify(myClub));
     }
     
-    function canManageClub(club) {
-        const rank = getUserRankInClub(club);
-        return rank >= 4;
-    }
-    
-    async function createClub(name) {
+    function createClub(name) {
         if (clubs.find(c => c.name === name)) { showToast("❌ Клуб уже существует!", "#e74c3c"); return false; }
-        myClub = { 
-            name: name, 
-            owner: userNickname, 
-            members: [{ username: userNickname, rank: 5, joined: Date.now() }], 
-            budget: 0, 
-            created: Date.now(),
-            taxRate: 5
-        };
+        myClub = { name: name, owner: userNickname, members: [{ username: userNickname, rank: 5, joined: Date.now() }], budget: 0, created: Date.now(), taxRate: 5 };
         clubs.push(myClub);
-        await saveGlobalClubs();
-        await loadGlobalClubs();
+        saveClubs();
         showToast(`✅ Клуб "${name}" создан!`, "#2ecc71");
         return true;
     }
     
-    async function joinClub(clubName) {
+    function joinClub(clubName) {
         const club = clubs.find(c => c.name === clubName);
         if (!club) { showToast("❌ Клуб не найден!", "#e74c3c"); return false; }
         if (club.members.length >= 20) { showToast("❌ Клуб переполнен!", "#e74c3c"); return false; }
         if (club.members.find(m => m.username === userNickname)) { showToast("❌ Вы уже в клубе!", "#e74c3c"); return false; }
         club.members.push({ username: userNickname, rank: 1, joined: Date.now() });
-        await saveGlobalClubs();
-        await loadGlobalClubs();
+        saveClubs();
         showToast(`✅ Вы вступили в клуб "${clubName}"!`, "#2ecc71");
         return true;
     }
     
-    async function leaveClub() {
+    function leaveClub() {
         if (!myClub) return;
         myClub.members = myClub.members.filter(m => m.username !== userNickname);
-        await saveGlobalClubs();
-        await loadGlobalClubs();
+        myClub = null;
+        saveClubs();
         showToast("❌ Вы покинули клуб!", "#e74c3c");
     }
     
-    async function changeMemberRank(clubName, username, newRank) {
+    function changeMemberRank(clubName, username, newRank) {
         const club = clubs.find(c => c.name === clubName);
         if (!club) return false;
-        if (!canManageClub(club)) { showToast("❌ У вас нет прав!", "#e74c3c"); return false; }
+        if (club.owner !== userNickname) { showToast("❌ Только создатель может менять ранги!", "#e74c3c"); return false; }
         const member = club.members.find(m => m.username === username);
         if (!member) return false;
-        if (newRank === 5 && club.owner !== userNickname) { showToast("❌ Только создатель может назначать создателя!", "#e74c3c"); return false; }
         member.rank = newRank;
-        await saveGlobalClubs();
-        await loadGlobalClubs();
+        saveClubs();
         showToast(`✅ Ранг ${username} изменён на ${RANK_NAMES[newRank]}!`, "#2ecc71");
         return true;
     }
     
-    async function kickFromClub(clubName, username) {
+    function kickFromClub(clubName, username) {
         const club = clubs.find(c => c.name === clubName);
         if (!club) return false;
-        if (!canManageClub(club)) { showToast("❌ У вас нет прав!", "#e74c3c"); return false; }
-        const member = club.members.find(m => m.username === username);
-        if (!member) return false;
-        if (member.rank === 5 && club.owner !== userNickname) { showToast("❌ Только создатель может исключить создателя!", "#e74c3c"); return false; }
+        if (club.owner !== userNickname) { showToast("❌ Только создатель может исключать!", "#e74c3c"); return false; }
         club.members = club.members.filter(m => m.username !== username);
-        await saveGlobalClubs();
-        await loadGlobalClubs();
+        saveClubs();
         showToast(`❌ ${username} исключён из клуба!`, "#e74c3c");
-        if (username === userNickname) showClubsModal();
+        if (username === userNickname) myClub = null;
         return true;
     }
     
-    async function donateToClub(amount) {
+    function donateToClub(amount) {
         if (!myClub) { showToast("❌ Вы не состоите в клубе!", "#e74c3c"); return; }
-        if (game.money < amount) { showToast("❌ Не хватает денег!", "#e74c3c"); return; }
-        game.money -= amount;
+        if (gameMoney < amount) { showToast("❌ Не хватает денег!", "#e74c3c"); return; }
+        gameMoney -= amount;
         myClub.budget += amount;
-        await saveGlobalClubs();
-        await loadGlobalClubs();
+        saveClubs();
         saveGame();
         showToast(`✅ Вы пожертвовали ${amount} ₽ в клуб!`, "#2ecc71");
     }
     
-    async function setClubTax(taxRate) {
-        if (!myClub || myClub.owner !== userNickname) { showToast("❌ Только создатель может менять налог!", "#e74c3c"); return; }
-        myClub.taxRate = Math.min(20, Math.max(0, taxRate));
-        await saveGlobalClubs();
-        await loadGlobalClubs();
-        showToast(`✅ Налог клуба установлен ${myClub.taxRate}%`, "#2ecc71");
-    }
-    
     async function showClubsModal() {
+        loadClubs();
         let modal = document.createElement("div");
         modal.className = "modal-overlay";
-        modal.innerHTML = `<div class="fullscreen-modal"><div class="fullscreen-header"><h3>🏛️ КЛУБЫ</h3><button id="closeClubs" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body" id="clubsBody"><div style="text-align:center;padding:20px;">🏛️ Загрузка...</div></div></div>`;
-        document.body.appendChild(modal);
+        let html = `<div class="fullscreen-modal"><div class="fullscreen-header"><h3>🏛️ КЛУБЫ</h3><button id="closeClubs" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body">`;
         
-        setTimeout(async () => {
-            await loadGlobalClubs();
-            let html = "";
-            
-            if (myClub) {
-                const canManage = canManageClub(myClub);
-                html += `<div style="background:#f0f2f5;border-radius:20px;padding:16px;margin-bottom:16px;">
-                            <strong style="font-size:1.2rem;">📛 ${myClub.name}</strong><br>
-                            <small>👑 Создатель: ${myClub.owner}</small><br>
-                            <small>👥 Участников: ${myClub.members.length}/20</small><br>
-                            <small>💰 Бюджет: ${myClub.budget.toLocaleString()} ₽</small>
-                            <div style="margin-top:12px;">
-                                <input type="number" id="donateAmount" placeholder="Пожертвовать" style="width:60%;padding:8px;border-radius:40px;border:1px solid #ccc;">
-                                <button id="donateBtn" style="background:#2ecc71;padding:8px 16px;border-radius:40px;">💰</button>
-                            </div>
-                        </div>`;
-                
-                html += `<div><strong>📋 УЧАСТНИКИ (${myClub.members.length}):</strong></div>`;
-                for (const m of myClub.members) {
-                    const isSelf = m.username === userNickname;
-                    html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#f0f2f5;border-radius:16px;margin:6px 0;flex-wrap:wrap;gap:8px;">
-                                <div><span class="rank-${m.rank}">${RANK_NAMES[m.rank]}</span><br>${m.username}${isSelf ? " (Вы)" : ""}</div>`;
-                    if (canManage && !isSelf && m.rank < 5) {
-                        html += `<div>
-                                    <select id="rankSelect_${m.username}" style="padding:6px;border-radius:20px;">
-                                        <option value="4">⭐ Совладелец</option>
-                                        <option value="3">🛡️ Старший</option>
-                                        <option value="2">🔰 Участник</option>
-                                        <option value="1">🌱 Новичок</option>
-                                    </select>
-                                    <button class="changeRankBtn" data-user="${m.username}" style="background:#9b59b6;padding:6px 12px;border-radius:30px;">Изменить</button>
-                                    <button class="kickBtn" data-user="${m.username}" style="background:#e74c3c;padding:6px 12px;border-radius:30px;">❌</button>
-                                </div>`;
-                    }
-                    html += `</div>`;
-                }
-                
-                if (myClub.owner === userNickname) {
-                    html += `<div style="margin-top:12px;">
-                                <input type="number" id="taxRate" placeholder="Налог %" value="${myClub.taxRate}" style="width:60%;padding:8px;border-radius:40px;">
-                                <button id="setTaxBtn" style="background:#f39c12;padding:8px 16px;border-radius:40px;">💰 Установить налог</button>
+        if (myClub) {
+            html += `<div style="background:#f0f2f5;border-radius:20px;padding:16px;margin-bottom:16px;">
+                        <strong style="font-size:1.2rem;">📛 ${myClub.name}</strong><br>
+                        <small>👑 Создатель: ${myClub.owner}</small><br>
+                        <small>👥 Участников: ${myClub.members.length}/20</small><br>
+                        <small>💰 Бюджет: ${myClub.budget.toLocaleString()} ₽</small>
+                        <div style="margin-top:12px;">
+                            <input type="number" id="donateAmount" placeholder="Сумма" style="width:60%;padding:8px;border-radius:40px;">
+                            <button id="donateBtn" style="background:#2ecc71;padding:8px 16px;border-radius:40px;">💰 Пожертвовать</button>
+                        </div>
+                    </div>`;
+            html += `<div><strong>📋 УЧАСТНИКИ:</strong></div>`;
+            for (const m of myClub.members) {
+                const isSelf = m.username === userNickname;
+                html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#f0f2f5;border-radius:16px;margin:6px 0;flex-wrap:wrap;gap:8px;">
+                            <div><span class="rank-${m.rank}">${RANK_NAMES[m.rank]}</span> ${m.username}${isSelf ? " (Вы)" : ""}</div>`;
+                if (myClub.owner === userNickname && !isSelf) {
+                    html += `<div>
+                                <select id="rankSelect_${m.username}" style="padding:6px;border-radius:20px;">
+                                    <option value="4">⭐ Совладелец</option>
+                                    <option value="3">🛡️ Старший</option>
+                                    <option value="2">🔰 Участник</option>
+                                    <option value="1">🌱 Новичок</option>
+                                </select>
+                                <button class="changeRankBtn" data-user="${m.username}" style="background:#9b59b6;padding:6px 12px;border-radius:30px;">Изменить</button>
+                                <button class="kickBtn" data-user="${m.username}" style="background:#e74c3c;padding:6px 12px;border-radius:30px;">❌</button>
                             </div>`;
                 }
-                html += `<button id="leaveClubBtn" style="margin-top:12px;background:#e74c3c;padding:12px;border-radius:40px;width:100%;">🚪 Покинуть клуб</button>`;
-            } else {
-                html += `<div style="margin-bottom:16px;"><input type="text" id="newClubName" class="code-input" placeholder="Название клуба"><button id="createClubBtn" style="background:#9b59b6;padding:10px;border-radius:40px;margin-top:8px;width:100%;">🏛️ СОЗДАТЬ КЛУБ</button></div>`;
-                html += `<div><input type="text" id="joinClubName" class="code-input" placeholder="Название клуба"><button id="joinClubBtn" style="background:#2ecc71;padding:10px;border-radius:40px;margin-top:8px;width:100%;">🤝 ВСТУПИТЬ</button></div>`;
+                html += `</div>`;
             }
-            
+            html += `<button id="leaveClubBtn" style="margin-top:12px;background:#e74c3c;padding:12px;border-radius:40px;width:100%;">🚪 Покинуть клуб</button>`;
+        } else {
+            html += `<div style="margin-bottom:16px;"><input type="text" id="newClubName" class="code-input" placeholder="Название клуба"><button id="createClubBtn" style="background:#9b59b6;padding:10px;border-radius:40px;margin-top:8px;width:100%;">🏛️ СОЗДАТЬ КЛУБ</button></div>`;
+            html += `<div><input type="text" id="joinClubName" class="code-input" placeholder="Название клуба"><button id="joinClubBtn" style="background:#2ecc71;padding:10px;border-radius:40px;margin-top:8px;width:100%;">🤝 ВСТУПИТЬ</button></div>`;
             html += `<h4 style="margin-top:20px;">📋 ПОПУЛЯРНЫЕ КЛУБЫ:</h4>`;
             const sortedClubs = [...clubs].sort((a, b) => (b.members?.length || 0) - (a.members?.length || 0)).slice(0, 10);
-            if (sortedClubs.length === 0) {
-                html += `<div class="club-item">❌ Нет созданных клубов</div>`;
-            } else {
+            if (sortedClubs.length === 0) { html += `<div class="club-item">❌ Нет созданных клубов</div>`; }
+            else {
                 for (const c of sortedClubs) {
-                    html += `<div class="club-item" style="justify-content:space-between;">
-                                <div><strong>${c.name}</strong><br><small>👑 ${c.owner} | 👥 ${c.members?.length || 0}/20</small></div>
-                                ${!myClub ? `<button class="join-existing" data-name="${c.name}" style="background:#2ecc71;padding:6px 12px;border-radius:30px;">Вступить</button>` : ''}
-                            </div>`;
+                    html += `<div class="club-item" style="justify-content:space-between;"><div><strong>${c.name}</strong><br><small>👑 ${c.owner} | 👥 ${c.members?.length || 0}/20</small></div><button class="join-existing" data-name="${c.name}" style="background:#2ecc71;padding:6px 12px;border-radius:30px;">Вступить</button></div>`;
                 }
             }
-            
-            html += `<div style="margin-top:16px;"><input type="text" id="searchClub" class="code-input" placeholder="🔍 Поиск клуба"><button id="searchClubBtn" style="background:#3498db;padding:10px;border-radius:40px;margin-top:8px;width:100%;">Найти</button><div id="searchResult"></div></div>`;
-            
-            const clubsBody = document.getElementById("clubsBody");
-            if (clubsBody) clubsBody.innerHTML = html;
-            
-            document.getElementById("createClubBtn")?.addEventListener("click", async () => {
-                const name = document.getElementById("newClubName").value.trim();
-                if (name && await createClub(name)) modal.remove();
-            });
-            document.getElementById("joinClubBtn")?.addEventListener("click", async () => {
-                const name = document.getElementById("joinClubName").value.trim();
-                if (name && await joinClub(name)) modal.remove();
-            });
-            document.getElementById("donateBtn")?.addEventListener("click", async () => {
-                const amount = parseInt(document.getElementById("donateAmount").value);
-                if (amount && await donateToClub(amount)) modal.remove();
-            });
-            document.getElementById("leaveClubBtn")?.addEventListener("click", async () => {
-                await leaveClub();
-                modal.remove();
-                setTimeout(() => showClubsModal(), 500);
-            });
-            document.getElementById("setTaxBtn")?.addEventListener("click", async () => {
-                const tax = parseInt(document.getElementById("taxRate").value);
-                if (tax && await setClubTax(tax)) modal.remove();
-            });
-            document.querySelectorAll(".changeRankBtn")?.forEach(btn => {
-                btn.addEventListener("click", async () => {
-                    const user = btn.dataset.user;
-                    const select = document.getElementById(`rankSelect_${user}`);
-                    const newRank = parseInt(select.value);
-                    if (await changeMemberRank(myClub.name, user, newRank)) modal.remove();
-                });
-            });
-            document.querySelectorAll(".kickBtn")?.forEach(btn => {
-                btn.addEventListener("click", async () => {
-                    if (await kickFromClub(myClub.name, btn.dataset.user)) modal.remove();
-                });
-            });
-            document.querySelectorAll(".join-existing")?.forEach(btn => {
-                btn.addEventListener("click", async () => {
-                    if (await joinClub(btn.dataset.name)) modal.remove();
-                });
-            });
-            document.getElementById("searchClubBtn")?.addEventListener("click", async () => {
-                const query = document.getElementById("searchClub").value.trim().toLowerCase();
-                const found = clubs.filter(c => c.name.toLowerCase().includes(query));
-                const resultDiv = document.getElementById("searchResult");
-                if (found.length === 0) resultDiv.innerHTML = "<div class='club-item'>❌ Клуб не найден</div>";
-                else {
-                    resultDiv.innerHTML = found.map(c => `<div class="club-item" style="display:flex;justify-content:space-between;"><div><strong>${c.name}</strong><br><small>👑 ${c.owner} | 👥 ${c.members?.length || 0}/20</small></div><button class="join-found" data-name="${c.name}" style="background:#2ecc71;padding:4px 12px;border-radius:30px;">Вступить</button></div>`).join('');
-                    document.querySelectorAll(".join-found").forEach(btn => {
-                        btn.addEventListener("click", async () => {
-                            if (await joinClub(btn.dataset.name)) modal.remove();
-                        });
-                    });
-                }
-            });
-        }, 50);
+        }
+        html += `</div></div>`;
+        modal.innerHTML = html;
+        document.body.appendChild(modal);
+        
+        document.getElementById("createClubBtn")?.addEventListener("click", () => { const name = document.getElementById("newClubName").value.trim(); if (name && createClub(name)) modal.remove(); });
+        document.getElementById("joinClubBtn")?.addEventListener("click", () => { const name = document.getElementById("joinClubName").value.trim(); if (name && joinClub(name)) modal.remove(); });
+        document.getElementById("donateBtn")?.addEventListener("click", () => { const amount = parseInt(document.getElementById("donateAmount").value); if (amount) donateToClub(amount); modal.remove(); setTimeout(() => showClubsModal(), 500); });
+        document.getElementById("leaveClubBtn")?.addEventListener("click", () => { leaveClub(); modal.remove(); setTimeout(() => showClubsModal(), 500); });
+        document.querySelectorAll(".changeRankBtn")?.forEach(btn => {
+            btn.addEventListener("click", () => { const user = btn.dataset.user; const select = document.getElementById(`rankSelect_${user}`); const newRank = parseInt(select.value); changeMemberRank(myClub.name, user, newRank); modal.remove(); setTimeout(() => showClubsModal(), 500); });
+        });
+        document.querySelectorAll(".kickBtn")?.forEach(btn => {
+            btn.addEventListener("click", () => { kickFromClub(myClub.name, btn.dataset.user); modal.remove(); setTimeout(() => showClubsModal(), 500); });
+        });
+        document.querySelectorAll(".join-existing")?.forEach(btn => {
+            btn.addEventListener("click", () => { joinClub(btn.dataset.name); modal.remove(); setTimeout(() => showClubsModal(), 500); });
+        });
         document.getElementById("closeClubs").addEventListener("click", () => modal.remove());
     }
     
@@ -844,13 +381,13 @@
     }
     
     function showFriendsModal() {
+        loadFriends();
         let modal = document.createElement("div");
         modal.className = "modal-overlay";
         let html = `<div class="fullscreen-modal"><div class="fullscreen-header"><h3>👥 МОИ ДРУЗЬЯ</h3><button id="closeFriends" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body">`;
         html += `<button id="inviteFriendBtn" style="background:#9b59b6;padding:12px;border-radius:40px;margin-bottom:16px;width:100%;">🔗 ПРИГЛАСИТЬ ДРУГА</button>`;
-        if (friendsList.length === 0) {
-            html += `<div style="text-align:center;padding:40px;">👥 У тебя пока нет друзей</div>`;
-        } else {
+        if (friendsList.length === 0) { html += `<div style="text-align:center;padding:40px;">👥 У тебя пока нет друзей</div>`; }
+        else {
             for (const friend of friendsList) {
                 html += `<div class="friend-item" style="justify-content:space-between;"><span>👤 ${friend}</span><button class="remove-friend" data-user="${friend}" style="background:#e74c3c;padding:4px 12px;border-radius:30px;">❌ Удалить</button></div>`;
             }
@@ -864,83 +401,63 @@
             showToast("🔗 Ссылка скопирована!", "#2ecc71");
         });
         document.querySelectorAll(".remove-friend").forEach(btn => {
-            btn.addEventListener("click", () => {
-                removeFriend(btn.dataset.user);
-                modal.remove();
-                showFriendsModal();
-            });
+            btn.addEventListener("click", () => { removeFriend(btn.dataset.user); modal.remove(); showFriendsModal(); });
         });
         document.getElementById("closeFriends").addEventListener("click", () => modal.remove());
     }
     
     // ========== ЛИДЕРБОРД ==========
-    async function sendToLeaderboard() {
-        try {
-            await fetch(LEADERBOARD_URL, {
-                method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "updateLeaderboard", username: userNickname, profit: game.totalProfit, level: game.level })
-            });
-        } catch(e) {}
+    function loadLeaderboard() {
+        const saved = localStorage.getItem("leaderboardData");
+        if (saved) leaderboardData = JSON.parse(saved);
+        else leaderboardData = [{ username: "Тест", profit: 10000, level: 2 }];
     }
     
-    async function loadLeaderboardData() {
-        try {
-            const response = await fetch(LEADERBOARD_URL + "?action=getLeaderboard&t=" + Date.now());
-            const data = await response.json();
-            if (data.success) {
-                leaderboardData = data.leaderboard || [];
-                leaderboardData.sort((a, b) => b.profit - a.profit);
-            }
-        } catch(e) { console.log(e); }
-        return leaderboardData;
+    function saveLeaderboard() {
+        localStorage.setItem("leaderboardData", JSON.stringify(leaderboardData));
     }
     
-    async function showGlobalLeaderboardModal() {
+    function updateLeaderboard() {
+        const existing = leaderboardData.find(p => p.username === userNickname);
+        if (existing) { existing.profit = gameTotalProfit; existing.level = gameLevel; }
+        else { leaderboardData.push({ username: userNickname, profit: gameTotalProfit, level: gameLevel }); }
+        leaderboardData.sort((a, b) => b.profit - a.profit);
+        saveLeaderboard();
+    }
+    
+    function showGlobalLeaderboardModal() {
+        loadLeaderboard();
         let modal = document.createElement("div");
         modal.className = "modal-overlay";
-        modal.innerHTML = `<div class="fullscreen-modal"><div class="fullscreen-header"><h3>🏆 ГЛОБАЛЬНЫЙ ЛИДЕРБОРД 🏆</h3><button id="closeLeaderboard" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body" id="leaderboardBody"><div style="text-align:center;padding:20px;">🏆 Загрузка...</div></div></div>`;
-        document.body.appendChild(modal);
-        
-        setTimeout(async () => {
-            const leaderboard = await loadLeaderboardData();
-            let html = `<div style="margin-bottom: 16px; text-align:center; font-weight:bold;">🌍 ТОП-50 ПЕРЕКУПОВ МИРА 🌍</div>`;
-            if (leaderboard.length === 0) {
-                html = `<div style="text-align:center;padding:40px;">🏆 Пока никого нет!</div>`;
-            } else {
-                leaderboard.slice(0, 50).forEach((player, index) => {
-                    let medal = "";
-                    let rankClass = "";
-                    if (index === 0) { rankClass = "leaderboard-top-1"; medal = "🥇 "; }
-                    else if (index === 1) { rankClass = "leaderboard-top-2"; medal = "🥈 "; }
-                    else if (index === 2) { rankClass = "leaderboard-top-3"; medal = "🥉 "; }
-                    else { medal = `${index+1}. `; }
-                    
-                    html += `<div class="leaderboard-item ${rankClass}">
-                                <div class="leaderboard-rank">${medal}</div>
-                                <div class="leaderboard-name">👤 ${player.username}</div>
-                                <div class="leaderboard-profit">💰 ${player.profit.toLocaleString()}₽</div>
-                                <div class="leaderboard-level">⭐ ${player.level}</div>
-                                ${player.username !== userNickname && !friendsList.includes(player.username) ? `<button class="add-friend-lb" data-user="${player.username}" style="background:#2ecc71;padding:4px 10px;border-radius:30px;color:white;font-size:0.7rem;">➕</button>` : ''}
-                                ${friendsList.includes(player.username) ? `<span style="color:#2ecc71;">✓ Друг</span>` : ''}
-                            </div>`;
-                });
-            }
-            const leaderboardBody = document.getElementById("leaderboardBody");
-            if (leaderboardBody) leaderboardBody.innerHTML = html;
-            document.querySelectorAll(".add-friend-lb").forEach(btn => {
-                btn.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    sendFriendRequest(btn.dataset.user);
-                    btn.remove();
-                });
+        let html = `<div class="fullscreen-modal"><div class="fullscreen-header"><h3>🏆 ГЛОБАЛЬНЫЙ ЛИДЕРБОРД 🏆</h3><button id="closeLeaderboard" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body">`;
+        html += `<div style="margin-bottom: 16px; text-align:center; font-weight:bold;">🌍 ТОП-50 ПЕРЕКУПОВ МИРА 🌍</div>`;
+        if (leaderboardData.length === 0) { html += `<div style="text-align:center;padding:40px;">🏆 Пока никого нет!</div>`; }
+        else {
+            leaderboardData.slice(0, 50).forEach((player, index) => {
+                let medal = "", rankClass = "";
+                if (index === 0) { rankClass = "leaderboard-top-1"; medal = "🥇 "; }
+                else if (index === 1) { rankClass = "leaderboard-top-2"; medal = "🥈 "; }
+                else if (index === 2) { rankClass = "leaderboard-top-3"; medal = "🥉 "; }
+                else { medal = `${index+1}. `; }
+                html += `<div class="leaderboard-item ${rankClass}">
+                            <div class="leaderboard-rank">${medal}</div>
+                            <div class="leaderboard-name">👤 ${player.username}</div>
+                            <div class="leaderboard-profit">💰 ${player.profit.toLocaleString()}₽</div>
+                            <div class="leaderboard-level">⭐ ${player.level}</div>
+                            ${player.username !== userNickname ? `<button class="add-friend-lb" data-user="${player.username}" style="background:#2ecc71;padding:4px 10px;border-radius:30px;color:white;font-size:0.7rem;">➕</button>` : ''}
+                        </div>`;
             });
-        }, 50);
+        }
+        html += `</div></div>`;
+        modal.innerHTML = html;
+        document.body.appendChild(modal);
+        document.querySelectorAll(".add-friend-lb").forEach(btn => {
+            btn.addEventListener("click", (e) => { e.stopPropagation(); sendFriendRequest(btn.dataset.user); btn.remove(); });
+        });
         document.getElementById("closeLeaderboard").addEventListener("click", () => modal.remove());
     }
     
-    // ========== НОВЫЕ МИНИ-ИГРЫ ==========
+    // ========== МИНИ-ИГРЫ ==========
     function showSlotsGame() {
         let modal = document.createElement("div");
         modal.className = "modal-overlay";
@@ -954,9 +471,9 @@
                     <div class="slot-reel" id="reel2"><div class="slot-reel-inner">${symbols.map(s => `<div class="slot-symbol">${s}</div>`).join('')}</div></div>
                     <div class="slot-reel" id="reel3"><div class="slot-reel-inner">${symbols.map(s => `<div class="slot-symbol">${s}</div>`).join('')}</div></div>
                 </div>
-                <input type="number" id="slotsBet" placeholder="Ставка" value="100" style="padding:10px;border-radius:40px;border:1px solid #ccc;width:150px;text-align:center;margin:10px auto;">
+                <input type="number" id="slotsBet" placeholder="Ставка" value="100" style="padding:10px;border-radius:40px;width:150px;text-align:center;margin:10px auto;">
                 <button id="spinBtn" class="slot-btn">🎲 КРУТИТЬ</button>
-                <div id="slotResult" style="margin-top:15px;font-weight:bold;"></div>
+                <div id="slotResult" style="margin-top:15px;"></div>
             </div>
         </div></div>`;
         document.body.appendChild(modal);
@@ -973,9 +490,8 @@
         document.getElementById("spinBtn").addEventListener("click", () => {
             let bet = parseInt(document.getElementById("slotsBet").value);
             if (isNaN(bet)) bet = 100;
-            if (bet > game.money) { showToast("❌ Не хватает денег!", "#e74c3c"); return; }
-            if (bet < 10) { showToast("❌ Минимальная ставка 10 ₽", "#e74c3c"); return; }
-            game.money -= bet;
+            if (bet > gameMoney) { showToast("❌ Не хватает денег!", "#e74c3c"); return; }
+            gameMoney -= bet;
             updateUI();
             const r1 = getRandomSymbol(), r2 = getRandomSymbol(), r3 = getRandomSymbol();
             spinReel("reel1", r1); spinReel("reel2", r2); spinReel("reel3", r3);
@@ -985,7 +501,7 @@
                 if (payouts[combo]) win = payouts[combo] * (bet / 100);
                 else if (r1 === r2 && r2 === r3) win = bet * 10;
                 else if (r1 === r2 || r2 === r3 || r1 === r3) win = bet * 2;
-                if (win > 0) { game.money += win; showToast(`🎉 ВЫИГРЫШ! +${Math.floor(win)} ₽`, "#2ecc71"); }
+                if (win > 0) { gameMoney += win; showToast(`🎉 ВЫИГРЫШ! +${Math.floor(win)} ₽`, "#2ecc71"); }
                 else { showToast(`😢 ПРОИГРЫШ! -${bet} ₽`, "#e74c3c"); }
                 document.getElementById("slotResult").innerHTML = `${r1} ${r2} ${r3} — ${win > 0 ? `ВЫИГРЫШ: ${Math.floor(win)} ₽` : "ПРОИГРЫШ"}`;
                 updateUI(); saveGame();
@@ -999,7 +515,7 @@
         modal.className = "modal-overlay";
         modal.innerHTML = `<div class="fullscreen-modal"><div class="fullscreen-header"><h3>🪙 ОРЕЛ/РЕШКА</h3><button id="closeCoin" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body" style="text-align:center;">
             <div style="font-size:5rem;margin:20px;" id="coinResult">🪙</div>
-            <input type="number" id="coinBet" placeholder="Ставка" value="100" style="padding:10px;border-radius:40px;border:1px solid #ccc;width:150px;text-align:center;">
+            <input type="number" id="coinBet" placeholder="Ставка" value="100" style="padding:10px;border-radius:40px;width:150px;text-align:center;">
             <div style="display:flex;gap:10px;justify-content:center;margin:15px 0;">
                 <button id="coinHeads" style="background:#2ecc71;padding:12px 20px;border-radius:40px;border:none;color:white;">🦅 ОРЕЛ</button>
                 <button id="coinTails" style="background:#e74c3c;padding:12px 20px;border-radius:40px;border:none;color:white;">🪙 РЕШКА</button>
@@ -1011,13 +527,12 @@
         function flipCoin(choice) {
             let bet = parseInt(document.getElementById("coinBet").value);
             if (isNaN(bet)) bet = 100;
-            if (bet > game.money) { showToast("❌ Не хватает денег!", "#e74c3c"); return; }
-            if (bet < 10) { showToast("❌ Минимальная ставка 10 ₽", "#e74c3c"); return; }
+            if (bet > gameMoney) { showToast("❌ Не хватает денег!", "#e74c3c"); return; }
             const result = Math.random() < 0.5 ? "ОРЕЛ" : "РЕШКА";
             const win = (choice === result);
             document.getElementById("coinResult").innerHTML = result === "ОРЕЛ" ? "🦅" : "🪙";
-            if (win) { game.money += bet; showToast(`🎉 ВЫИГРЫШ! +${bet} ₽`, "#2ecc71"); }
-            else { game.money -= bet; showToast(`😢 ПРОИГРЫШ! -${bet} ₽`, "#e74c3c"); }
+            if (win) { gameMoney += bet; showToast(`🎉 ВЫИГРЫШ! +${bet} ₽`, "#2ecc71"); }
+            else { gameMoney -= bet; showToast(`😢 ПРОИГРЫШ! -${bet} ₽`, "#e74c3c"); }
             document.getElementById("coinMessage").innerHTML = `${result}! ${win ? `Выигрыш +${bet} ₽` : `Проигрыш -${bet} ₽`}`;
             updateUI(); saveGame();
         }
@@ -1026,53 +541,13 @@
         document.getElementById("closeCoin").addEventListener("click", () => modal.remove());
     }
     
-    function showGuessGame() {
-        let secretNumber = Math.floor(Math.random() * 100) + 1;
-        let attempts = 0;
-        let modal = document.createElement("div");
-        modal.className = "modal-overlay";
-        modal.innerHTML = `<div class="fullscreen-modal"><div class="fullscreen-header"><h3>🔢 УГАДАЙ ЧИСЛО (1-100)</h3><button id="closeGuess" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body" style="text-align:center;">
-            <div style="font-size:3rem;margin:20px;">🔢</div>
-            <input type="number" id="guessNumber" placeholder="Твоё число" style="padding:10px;border-radius:40px;border:1px solid #ccc;width:150px;">
-            <input type="number" id="guessBet" placeholder="Ставка" value="100" style="padding:10px;border-radius:40px;border:1px solid #ccc;width:150px;margin-top:10px;">
-            <button id="guessSubmit" style="background:#f39c12;padding:12px 24px;border-radius:40px;border:none;color:white;margin:15px 0;">УГАДАТЬ</button>
-            <div id="guessMessage"></div>
-        </div></div>`;
-        document.body.appendChild(modal);
-        
-        document.getElementById("guessSubmit").addEventListener("click", () => {
-            let bet = parseInt(document.getElementById("guessBet").value);
-            let guess = parseInt(document.getElementById("guessNumber").value);
-            if (isNaN(bet)) bet = 100;
-            if (isNaN(guess)) { showToast("❌ Введи число!", "#e74c3c"); return; }
-            if (bet > game.money) { showToast("❌ Не хватает денег!", "#e74c3c"); return; }
-            if (bet < 10) { showToast("❌ Минимальная ставка 10 ₽", "#e74c3c"); return; }
-            attempts++;
-            if (guess === secretNumber) {
-                const winAmount = bet * (10 - attempts + 1);
-                game.money += winAmount;
-                showToast(`🎉 ПРАВИЛЬНО! +${winAmount} ₽`, "#2ecc71");
-                modal.remove();
-            } else if (attempts >= 5) {
-                game.money -= bet;
-                showToast(`😢 Не угадал! Число было ${secretNumber}. -${bet} ₽`, "#e74c3c");
-                modal.remove();
-            } else {
-                game.money -= bet;
-                document.getElementById("guessMessage").innerHTML = `${guess} ${guess < secretNumber ? "📈 БОЛЬШЕ" : "📉 МЕНЬШЕ"} | Попыток: ${5 - attempts}`;
-            }
-            updateUI(); saveGame();
-        });
-        document.getElementById("closeGuess").addEventListener("click", () => modal.remove());
-    }
-    
     function showDiceGame() {
         let modal = document.createElement("div");
         modal.className = "modal-overlay";
         modal.innerHTML = `<div class="fullscreen-modal"><div class="fullscreen-header"><h3>🎲 КОСТИ</h3><button id="closeDice" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body" style="text-align:center;">
             <div style="font-size:4rem;margin:20px;" id="diceResult">🎲</div>
-            <input type="number" id="diceBet" placeholder="Ставка" value="100" style="padding:10px;border-radius:40px;border:1px solid #ccc;width:150px;">
-            <input type="number" id="diceGuess" placeholder="Угадай число (1-6)" style="padding:10px;border-radius:40px;border:1px solid #ccc;width:150px;margin-top:10px;">
+            <input type="number" id="diceBet" placeholder="Ставка" value="100" style="padding:10px;border-radius:40px;width:150px;text-align:center;">
+            <input type="number" id="diceGuess" placeholder="Угадай число (1-6)" style="padding:10px;border-radius:40px;width:150px;margin-top:10px;">
             <button id="rollDice" style="background:#f39c12;padding:12px 24px;border-radius:40px;border:none;color:white;margin:15px 0;">КИНУТЬ</button>
             <div id="diceMessage"></div>
         </div></div>`;
@@ -1083,17 +558,17 @@
             let guess = parseInt(document.getElementById("diceGuess").value);
             if (isNaN(bet)) bet = 100;
             if (isNaN(guess) || guess < 1 || guess > 6) { showToast("❌ Введи число от 1 до 6!", "#e74c3c"); return; }
-            if (bet > game.money) { showToast("❌ Не хватает денег!", "#e74c3c"); return; }
+            if (bet > gameMoney) { showToast("❌ Не хватает денег!", "#e74c3c"); return; }
             const roll = Math.floor(Math.random() * 6) + 1;
             const diceEmojis = {1:"⚀",2:"⚁",3:"⚂",4:"⚃",5:"⚄",6:"⚅"};
             document.getElementById("diceResult").innerHTML = diceEmojis[roll];
             if (guess === roll) {
                 const winAmount = bet * 5;
-                game.money += winAmount;
+                gameMoney += winAmount;
                 showToast(`🎉 УГАДАЛ! +${winAmount} ₽`, "#2ecc71");
                 document.getElementById("diceMessage").innerHTML = `Выпало ${roll}! Вы выиграли ${winAmount} ₽!`;
             } else {
-                game.money -= bet;
+                gameMoney -= bet;
                 showToast(`😢 Не угадал! Выпало ${roll}. -${bet} ₽`, "#e74c3c");
                 document.getElementById("diceMessage").innerHTML = `Выпало ${roll}! Вы проиграли ${bet} ₽!`;
             }
@@ -1102,12 +577,51 @@
         document.getElementById("closeDice").addEventListener("click", () => modal.remove());
     }
     
+    function showGuessGame() {
+        let secretNumber = Math.floor(Math.random() * 100) + 1;
+        let attempts = 0;
+        let modal = document.createElement("div");
+        modal.className = "modal-overlay";
+        modal.innerHTML = `<div class="fullscreen-modal"><div class="fullscreen-header"><h3>🔢 УГАДАЙ ЧИСЛО (1-100)</h3><button id="closeGuess" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body" style="text-align:center;">
+            <div style="font-size:3rem;margin:20px;">🔢</div>
+            <input type="number" id="guessNumber" placeholder="Твоё число" style="padding:10px;border-radius:40px;width:150px;">
+            <input type="number" id="guessBet" placeholder="Ставка" value="100" style="padding:10px;border-radius:40px;width:150px;margin-top:10px;">
+            <button id="guessSubmit" style="background:#f39c12;padding:12px 24px;border-radius:40px;border:none;color:white;margin:15px 0;">УГАДАТЬ</button>
+            <div id="guessMessage"></div>
+        </div></div>`;
+        document.body.appendChild(modal);
+        
+        document.getElementById("guessSubmit").addEventListener("click", () => {
+            let bet = parseInt(document.getElementById("guessBet").value);
+            let guess = parseInt(document.getElementById("guessNumber").value);
+            if (isNaN(bet)) bet = 100;
+            if (isNaN(guess)) { showToast("❌ Введи число!", "#e74c3c"); return; }
+            if (bet > gameMoney) { showToast("❌ Не хватает денег!", "#e74c3c"); return; }
+            attempts++;
+            if (guess === secretNumber) {
+                const winAmount = bet * (10 - attempts + 1);
+                gameMoney += winAmount;
+                showToast(`🎉 ПРАВИЛЬНО! +${winAmount} ₽`, "#2ecc71");
+                modal.remove();
+            } else if (attempts >= 5) {
+                gameMoney -= bet;
+                showToast(`😢 Не угадал! Число было ${secretNumber}. -${bet} ₽`, "#e74c3c");
+                modal.remove();
+            } else {
+                gameMoney -= bet;
+                document.getElementById("guessMessage").innerHTML = `${guess} ${guess < secretNumber ? "📈 БОЛЬШЕ" : "📉 МЕНЬШЕ"} | Попыток: ${5 - attempts}`;
+            }
+            updateUI(); saveGame();
+        });
+        document.getElementById("closeGuess").addEventListener("click", () => modal.remove());
+    }
+    
     function showQuizGame() {
         const questions = [
-            { q: "Какой iPhone был представлен в 2007 году?", a: "iPhone" },
-            { q: "Как называется система распознавания лица у iPhone?", a: "Face ID" },
-            { q: "Какой iPhone первым получил 5G?", a: "iPhone 12" },
-            { q: "Какой процессор в iPhone 15 Pro?", a: "A17 Pro" }
+            { q: "Какой iPhone был представлен в 2007 году?", a: "iphone" },
+            { q: "Какая система распознавания лица у iPhone?", a: "face id" },
+            { q: "Какой iPhone первым получил 5G?", a: "iphone 12" },
+            { q: "Какой процессор в iPhone 15 Pro?", a: "a17 pro" }
         ];
         const q = questions[Math.floor(Math.random() * questions.length)];
         let modal = document.createElement("div");
@@ -1115,8 +629,8 @@
         modal.innerHTML = `<div class="fullscreen-modal"><div class="fullscreen-header"><h3>🧠 ВИКТОРИНА</h3><button id="closeQuiz" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body" style="text-align:center;">
             <div style="font-size:3rem;margin:20px;">🤔</div>
             <p style="margin:20px;font-size:1.1rem;"><strong>${q.q}</strong></p>
-            <input type="text" id="quizAnswer" placeholder="Твой ответ" style="padding:10px;border-radius:40px;border:1px solid #ccc;width:80%;">
-            <input type="number" id="quizBet" placeholder="Ставка" value="100" style="padding:10px;border-radius:40px;border:1px solid #ccc;width:80%;margin-top:10px;">
+            <input type="text" id="quizAnswer" placeholder="Твой ответ" style="padding:10px;border-radius:40px;width:80%;">
+            <input type="number" id="quizBet" placeholder="Ставка" value="100" style="padding:10px;border-radius:40px;width:80%;margin-top:10px;">
             <button id="submitQuiz" style="background:#f39c12;padding:12px 24px;border-radius:40px;border:none;color:white;margin:15px 0;">ОТВЕТИТЬ</button>
             <div id="quizMessage"></div>
         </div></div>`;
@@ -1126,14 +640,14 @@
             let bet = parseInt(document.getElementById("quizBet").value);
             let answer = document.getElementById("quizAnswer").value.trim().toLowerCase();
             if (isNaN(bet)) bet = 100;
-            if (bet > game.money) { showToast("❌ Не хватает денег!", "#e74c3c"); return; }
-            if (answer === q.a.toLowerCase()) {
+            if (bet > gameMoney) { showToast("❌ Не хватает денег!", "#e74c3c"); return; }
+            if (answer === q.a) {
                 const winAmount = bet * 2;
-                game.money += winAmount;
+                gameMoney += winAmount;
                 showToast(`🎉 ПРАВИЛЬНО! +${winAmount} ₽`, "#2ecc71");
                 document.getElementById("quizMessage").innerHTML = `Правильно! +${winAmount} ₽`;
             } else {
-                game.money -= bet;
+                gameMoney -= bet;
                 showToast(`😢 Неправильно! Ответ: ${q.a}. -${bet} ₽`, "#e74c3c");
                 document.getElementById("quizMessage").innerHTML = `Неправильно! Ответ: ${q.a}. Проигрыш -${bet} ₽`;
             }
@@ -1145,7 +659,7 @@
     
     // ========== АДМИН-ПАНЕЛЬ ==========
     function showAdminPanel() {
-        if (!isAdmin) { showToast("❌ Нет доступа! Введи код ADMIN777", "#e74c3c"); return; }
+        if (!isAdmin) { showToast("❌ Нет доступа! Введи код ADMIN777 в секретных кодах!", "#e74c3c"); return; }
         let modal = document.createElement("div");
         modal.className = "modal-overlay";
         modal.innerHTML = `<div class="admin-panel">
@@ -1164,37 +678,26 @@
             <div class="admin-section">
                 <h3>🏆 ЛИДЕРБОРД</h3>
                 <button id="refreshLeaderboardBtn" class="admin-btn">🔄 Обновить</button>
-                <button id="resetLeaderboardBtn" class="admin-btn danger-btn">🗑️ Обнулить</button>
             </div>
             <div class="admin-section">
                 <h3>📜 ИНФО</h3>
                 <p>Игрок: ${userNickname}</p>
-                <p>Баланс: ${game.money} ₽</p>
-                <p>Прибыль: ${game.totalProfit} ₽</p>
-                <p>Уровень: ${game.level}</p>
+                <p>Баланс: ${gameMoney} ₽</p>
+                <p>Прибыль: ${gameTotalProfit} ₽</p>
+                <p>Уровень: ${gameLevel}</p>
             </div>
             <button id="closeAdmin" class="close-btn">ЗАКРЫТЬ</button>
         </div>`;
         document.body.appendChild(modal);
         
-        document.getElementById("addMoneyBtn").onclick = () => {
-            let amount = parseInt(document.getElementById("adminMoney").value);
-            if (amount) { game.money += amount; game.totalProfit += amount; updateUI(); saveGame(); showToast(`+${amount} ₽`, "#2ecc71"); }
-        };
-        document.getElementById("setMoneyBtn").onclick = () => {
-            let amount = parseInt(document.getElementById("adminMoney").value);
-            if (amount) { game.money = amount; updateUI(); saveGame(); showToast(`Баланс: ${amount} ₽`, "#2ecc71"); }
-        };
-        document.getElementById("addExpBtn").onclick = () => {
-            let amount = parseInt(document.getElementById("adminExp").value);
-            if (amount) addExp(amount);
-        };
-        document.getElementById("refreshLeaderboardBtn").onclick = async () => { await loadLeaderboardData(); showToast("Лидерборд обновлён!", "#2ecc71"); };
-        document.getElementById("resetLeaderboardBtn").onclick = () => { if (confirm("Обнулить лидерборд?")) showToast("Функция в разработке", "#f39c12"); };
+        document.getElementById("addMoneyBtn").onclick = () => { let amount = parseInt(document.getElementById("adminMoney").value); if (amount) { gameMoney += amount; gameTotalProfit += amount; updateUI(); saveGame(); showToast(`+${amount} ₽`, "#2ecc71"); } };
+        document.getElementById("setMoneyBtn").onclick = () => { let amount = parseInt(document.getElementById("adminMoney").value); if (amount) { gameMoney = amount; updateUI(); saveGame(); showToast(`Баланс: ${amount} ₽`, "#2ecc71"); } };
+        document.getElementById("addExpBtn").onclick = () => { let amount = parseInt(document.getElementById("adminExp").value); if (amount) addExp(amount); };
+        document.getElementById("refreshLeaderboardBtn").onclick = () => { loadLeaderboard(); showToast("Лидерборд обновлён!", "#2ecc71"); };
         document.getElementById("closeAdmin").onclick = () => modal.remove();
     }
     
-    // ========== КОДЫ ==========
+    // ========== СЕКРЕТНЫЕ КОДЫ ==========
     const SECRET_CODES = {
         "5000": { money: 5000, msg: "5000 ₽ зачислено!" },
         "10000": { money: 10000, msg: "10000 ₽ зачислено!" },
@@ -1218,9 +721,9 @@
             if (SECRET_CODES[code]) {
                 const reward = SECRET_CODES[code];
                 if (reward.admin) { isAdmin = true; showToast("👑 Админ-панель разблокирована!", "#9b59b6"); modal.remove(); showAdminPanel(); }
-                if (reward.money) { game.money += reward.money; showMoneyAnimation(reward.money); game.totalProfit += reward.money; }
+                if (reward.money) { gameMoney += reward.money; gameTotalProfit += reward.money; showMoneyAnimation(reward.money); }
                 if (reward.exp) addExp(reward.exp);
-                if (reward.device) game.inventory.push(reward.device);
+                if (reward.device) gameInventory.push(reward.device);
                 showToast(`🎁 ${reward.msg}`, "#2ecc71");
                 updateUI(); saveGame(); modal.remove();
             } else { showToast("❌ Неверный код!", "#e74c3c"); }
@@ -1228,66 +731,73 @@
         document.getElementById("closeCodes").addEventListener("click", () => modal.remove());
     }
     
-    // ========== ОСНОВНЫЕ ФУНКЦИИ ==========
-    let game = { money: 5000, exp: 0, level: 1, inventory: [{ model: "iPhone 6", condition: "Бит экран", buyPrice: 1800, brokenPart: "Экран" }], parts: [], totalSales: 0, totalProfit: 0, discount: 0 };
-    let currentMarket = [], currentSpareMarket = [];
-    let usedCodes = new Set();
-    
+    // ========== ОСНОВНЫЕ ФУНКЦИИ ИГРЫ ==========
     function saveGame() { 
         localStorage.setItem("iDealerFinal", JSON.stringify({ 
-            money: game.money, exp: game.exp, level: game.level, inventory: game.inventory, parts: game.parts,
-            totalSales: game.totalSales, totalProfit: game.totalProfit, usedCodes: Array.from(usedCodes),
-            nickname: userNickname, discount: game.discount
+            money: gameMoney, exp: gameExp, level: gameLevel, inventory: gameInventory, 
+            parts: gameParts, totalSales: gameTotalSales, totalProfit: gameTotalProfit, 
+            nickname: userNickname
         })); 
-        sendToLeaderboard();
+        updateLeaderboard();
     }
     
     function loadGame() {
         let data = localStorage.getItem("iDealerFinal");
         if (!data) return false;
-        try { let saved = JSON.parse(data); game.money = saved.money; game.exp = saved.exp; game.level = saved.level; game.inventory = saved.inventory; game.parts = saved.parts || []; game.totalSales = saved.totalSales || 0; game.totalProfit = saved.totalProfit || 0; game.discount = saved.discount || 0; if (saved.usedCodes) usedCodes = new Set(saved.usedCodes); if (saved.nickname) userNickname = saved.nickname; recalcLevel(); return true; } catch(e) { return false; }
+        try { let saved = JSON.parse(data); gameMoney = saved.money; gameExp = saved.exp; gameLevel = saved.level; gameInventory = saved.inventory; gameParts = saved.parts || []; gameTotalSales = saved.totalSales || 0; gameTotalProfit = saved.totalProfit || 0; if (saved.nickname) userNickname = saved.nickname; recalcLevel(); return true; } catch(e) { return false; }
     }
     
-    function recalcLevel() { let lvl = 1, need = getExpNeeded(lvl), tmp = game.exp; while (tmp >= need && lvl < 30) { tmp -= need; lvl++; need = getExpNeeded(lvl); } game.level = lvl; updateExpUI(); }
+    function recalcLevel() { let lvl = 1, need = getExpNeeded(lvl), tmp = gameExp; while (tmp >= need && lvl < 30) { tmp -= need; lvl++; need = getExpNeeded(lvl); } gameLevel = lvl; updateExpUI(); }
     function getExpNeeded(level) { return level === 1 ? 50 : Math.floor(50 + (level-1) * 45); }
-    function addExp(amount) { game.exp += amount; let need = getExpNeeded(game.level); while (game.exp >= need && game.level < 30) { game.exp -= need; game.level++; need = getExpNeeded(game.level); showToast(`🎉 УРОВЕНЬ ${game.level}!`, "#f39c12"); } updateExpUI(); saveGame(); }
-    function updateExpUI() { let need = getExpNeeded(game.level); let percent = (game.exp / need) * 100; document.getElementById("expFill").style.width = `${Math.min(100, percent)}%`; document.getElementById("expCurrent").innerText = Math.floor(game.exp); document.getElementById("expNeeded").innerText = need; document.getElementById("levelNum").innerText = game.level; let rank = game.level < 3 ? "🔰 НОВИЧОК" : game.level < 6 ? "🔄 ПЕРЕКУП" : game.level < 10 ? "👑 ПРОФИ" : "💎 ЛЕГЕНДА"; document.getElementById("rankName").innerHTML = rank; }
-    function showToast(msg, color="#27ae60") { let toast = document.createElement("div"); toast.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:${color};color:white;padding:10px 20px;border-radius:60px;font-weight:bold;z-index:2000;animation:slideUp 0.2s;font-size:0.9rem;z-index:5000;`; toast.innerText = msg; document.body.appendChild(toast); setTimeout(() => toast.remove(), 2000); }
+    function addExp(amount) { gameExp += amount; let need = getExpNeeded(gameLevel); while (gameExp >= need && gameLevel < 30) { gameExp -= need; gameLevel++; need = getExpNeeded(gameLevel); showToast(`🎉 УРОВЕНЬ ${gameLevel}!`, "#f39c12"); } updateExpUI(); saveGame(); }
+    function updateExpUI() { let need = getExpNeeded(gameLevel); let percent = (gameExp / need) * 100; document.getElementById("expFill").style.width = `${Math.min(100, percent)}%`; document.getElementById("expCurrent").innerText = Math.floor(gameExp); document.getElementById("expNeeded").innerText = need; document.getElementById("levelNum").innerText = gameLevel; let rank = gameLevel < 3 ? "🔰 НОВИЧОК" : gameLevel < 6 ? "🔄 ПЕРЕКУП" : gameLevel < 10 ? "👑 ПРОФИ" : "💎 ЛЕГЕНДА"; document.getElementById("rankName").innerHTML = rank; }
+    function showToast(msg, color="#27ae60") { let toast = document.createElement("div"); toast.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:${color};color:white;padding:10px 20px;border-radius:60px;font-weight:bold;z-index:2000;animation:slideUp 0.2s;`; toast.innerText = msg; document.body.appendChild(toast); setTimeout(() => toast.remove(), 2000); }
     function showMoneyAnimation(amount) { let popup = document.createElement("div"); popup.className = "money-popup"; popup.innerText = `+${amount.toLocaleString()} ₽`; popup.style.left = (window.innerWidth/2) + "px"; popup.style.top = (window.innerHeight/2) + "px"; document.body.appendChild(popup); setTimeout(() => popup.remove(), 800); }
     function randomCondition() { return CONDITIONS[Math.floor(Math.random() * CONDITIONS.length)]; }
     
     function generateMarket() { 
-        let available = DEVICES_DB.filter(d => d.minLevel <= game.level); 
+        let available = DEVICES_DB.filter(d => d.minLevel <= gameLevel); 
         let offers = []; 
         for (let i = 0; i < 8; i++) { 
             let device = available[Math.floor(Math.random() * available.length)]; 
             let condition = randomCondition(); 
             let mult = COND_MOD[condition]; 
             let price = Math.floor(device.base * mult * (0.7 + Math.random() * 0.5)); 
-            if (game.discount > 0) price = Math.floor(price * (1 - game.discount / 100)); 
             offers.push({ id: Date.now() + i, model: device.model, icon: device.icon, condition, price: Math.max(1200, price) }); 
         } 
         return offers; 
     }
     
+    function generateSpareMarket() { 
+        let offers = []; 
+        for (let i = 0; i < 8; i++) { 
+            let device = DEVICES_DB[Math.floor(Math.random() * DEVICES_DB.length)]; 
+            let repairTypes = ["Экран", "Батарея", "Камера", "Динамик", "Корпус"];
+            let partType = repairTypes[Math.floor(Math.random() * repairTypes.length)];
+            let price = Math.floor(device.base * 0.1 * (0.5 + Math.random())); 
+            offers.push({ id: Date.now() + i, phoneModel: device.model, partType: partType, supplier: ["🏪 Автосервис", "📦 Китай", "🔄 Б/у", "✨ Оригинал"][Math.floor(Math.random() * 4)], price: Math.max(300, price) }); 
+        } 
+        return offers; 
+    }
+    
     function buyDevice(offer) { 
-        if (game.money < offer.price) { showToast("Не хватает денег!", "#e74c3c"); return; } 
-        game.money -= offer.price; 
-        game.inventory.push({ model: offer.model, condition: offer.condition, buyPrice: offer.price, brokenPart: offer.condition === "Бит экран" ? "Экран" : null }); 
+        if (gameMoney < offer.price) { showToast("Не хватает денег!", "#e74c3c"); return; } 
+        gameMoney -= offer.price; 
+        gameInventory.push({ model: offer.model, condition: offer.condition, buyPrice: offer.price, brokenPart: offer.condition === "Бит экран" ? "Экран" : null }); 
         showToast(`📲 Куплен ${offer.model}`, "#2ecc71"); 
-        currentMarket = generateMarket(); renderMarket(); updateUI(); saveGame(); 
+        currentMarketItems = generateMarket(); renderMarket(); updateUI(); saveGame(); 
     }
     
     function buySparePart(part) { 
-        if (game.money < part.price) { showToast("Не хватает денег!", "#e74c3c"); return; } 
-        game.money -= part.price; 
-        game.parts.push({ id: Date.now() + Math.random(), phoneModel: part.phoneModel, partType: part.partType, supplier: part.supplier, price: part.price }); 
+        if (gameMoney < part.price) { showToast("Не хватает денег!", "#e74c3c"); return; } 
+        gameMoney -= part.price; 
+        gameParts.push({ id: Date.now() + Math.random(), phoneModel: part.phoneModel, partType: part.partType, supplier: part.supplier, price: part.price }); 
         showToast(`🔧 ${part.partType} для ${part.phoneModel} куплен!`, "#3498db"); 
-        currentSpareMarket = generateSpareMarket(); renderSpareMarket(); updateUI(); saveGame(); 
+        currentSpareMarketItems = generateSpareMarket(); renderSpareMarket(); updateUI(); saveGame(); 
     }
     
     function showRepairOptions(device, idx) { 
-        let compatibleParts = game.parts.filter(p => p.phoneModel === device.model && p.partType === device.brokenPart); 
+        let compatibleParts = gameParts.filter(p => p.phoneModel === device.model && p.partType === device.brokenPart); 
         if (compatibleParts.length === 0) { showToast(`Нет запчастей для ${device.brokenPart}!`, "#e74c3c"); return; } 
         let modal = document.createElement("div"); 
         modal.className = "modal-overlay"; 
@@ -1296,10 +806,10 @@
         document.querySelectorAll(".repair-part-btn").forEach(btn => { 
             btn.addEventListener("click", () => { 
                 const part = JSON.parse(btn.dataset.part);
-                const partIndex = game.parts.findIndex(p => p.id === part.id); 
-                if (partIndex !== -1) game.parts.splice(partIndex, 1); 
-                game.inventory[idx].brokenPart = null; 
-                game.inventory[idx].condition = "Хорошее"; 
+                const partIndex = gameParts.findIndex(p => p.id === part.id); 
+                if (partIndex !== -1) gameParts.splice(partIndex, 1); 
+                gameInventory[idx].brokenPart = null; 
+                gameInventory[idx].condition = "Хорошее"; 
                 showToast(`✅ ${device.model} отремонтирован!`, "#2ecc71"); 
                 addExp(20); updateUI(); saveGame(); modal.remove(); 
             }); 
@@ -1321,10 +831,10 @@
         document.querySelectorAll(".offer-item").forEach(el => { 
             el.addEventListener("click", () => { 
                 let sellPrice = parseInt(el.dataset.offer); 
-                game.money += sellPrice; 
+                gameMoney += sellPrice; 
                 const profit = sellPrice - device.buyPrice; 
-                if (profit > 0) { game.totalProfit += profit; addExp(10); }
-                game.inventory.splice(index, 1); game.totalSales++; 
+                if (profit > 0) { gameTotalProfit += profit; addExp(10); }
+                gameInventory.splice(index, 1); gameTotalSales++; 
                 showMoneyAnimation(sellPrice); 
                 showToast(`💰 ПРОДАНО за ${sellPrice.toLocaleString()} ₽`, "#2ecc71"); 
                 updateUI(); saveGame(); modal.remove(); 
@@ -1336,9 +846,9 @@
     function renderInventory() { 
         let container = document.getElementById("inventoryList"); 
         if (!container) return; 
-        if (game.inventory.length === 0) { container.innerHTML = "<div style='text-align:center;padding:40px;'>📭 Нет устройств</div>"; return; }
+        if (gameInventory.length === 0) { container.innerHTML = "<div style='text-align:center;padding:40px;'>📭 Нет устройств</div>"; return; }
         container.innerHTML = ""; 
-        game.inventory.forEach((device, idx) => { 
+        gameInventory.forEach((device, idx) => { 
             let div = document.createElement("div"); 
             div.className = "phone-card"; 
             div.style.borderLeftColor = COND_COLORS[device.condition]; 
@@ -1353,7 +863,7 @@
         let container = document.getElementById("marketGrid"); 
         if (!container) return; 
         container.innerHTML = ""; 
-        currentMarket.forEach(offer => { 
+        currentMarketItems.forEach(offer => { 
             let card = document.createElement("div"); 
             card.className = "market-item"; 
             card.style.borderTop = `3px solid ${COND_COLORS[offer.condition]}`; 
@@ -1367,7 +877,7 @@
         let container = document.getElementById("spareMarketGrid"); 
         if (!container) return; 
         container.innerHTML = ""; 
-        currentSpareMarket.forEach(part => { 
+        currentSpareMarketItems.forEach(part => { 
             let card = document.createElement("div"); 
             card.className = "market-item"; 
             card.innerHTML = `<div style="font-size:1.5rem;">🔧</div><div style="font-weight:bold;font-size:0.8rem;">${part.partType}</div><div style="font-size:0.7rem;">для ${part.phoneModel}</div><div class="price-tag">${part.price.toLocaleString()} ₽</div><button class="buy-btn">💸 КУПИТЬ</button>`; 
@@ -1377,14 +887,14 @@
     }
     
     function updateUI() { 
-        document.getElementById("balance").innerText = Math.floor(game.money).toLocaleString(); 
+        document.getElementById("balance").innerText = Math.floor(gameMoney).toLocaleString(); 
         renderInventory(); renderMarket(); renderSpareMarket(); updateExpUI(); 
     }
     
     function showProfile() { 
         let modal = document.createElement("div"); 
         modal.className = "modal-overlay"; 
-        modal.innerHTML = `<div class="profile-content" style="max-width:340px;width:90%;border-radius:48px;padding:24px;"><div style="text-align:center;margin-bottom:20px;"><div style="font-size:4rem;background:linear-gradient(135deg,#f39c12,#e67e22);width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">👨‍💼</div><h2>${userNickname || "Мастер"}</h2><p>⭐ Уровень ${game.level} • ${game.totalSales} продаж</p>${isAdmin ? '<p style="color:#9b59b6;">👑 АДМИН</p>' : ''}</div><div class="profile-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><div style="background:#f0f2f5;border-radius:20px;padding:12px;text-align:center;"><div style="font-size:1.3rem;font-weight:bold;">${Math.floor(game.money).toLocaleString()}₽</div><div>БАЛАНС</div></div><div style="background:#f0f2f5;border-radius:20px;padding:12px;text-align:center;"><div style="font-size:1.3rem;font-weight:bold;">${game.totalProfit.toLocaleString()}₽</div><div>ПРИБЫЛЬ</div></div><div style="background:#f0f2f5;border-radius:20px;padding:12px;text-align:center;"><div style="font-size:1.3rem;font-weight:bold;">${game.inventory.length}</div><div>УСТРОЙСТВ</div></div></div><button id="closeProfile" class="close-btn">ЗАКРЫТЬ</button></div>`; 
+        modal.innerHTML = `<div class="profile-content" style="max-width:340px;width:90%;border-radius:48px;padding:24px;"><div style="text-align:center;margin-bottom:20px;"><div style="font-size:4rem;background:linear-gradient(135deg,#f39c12,#e67e22);width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">👨‍💼</div><h2>${userNickname || "Мастер"}</h2><p>⭐ Уровень ${gameLevel} • ${gameTotalSales} продаж</p>${isAdmin ? '<p style="color:#9b59b6;">👑 АДМИН</p>' : ''}</div><div class="profile-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><div style="background:#f0f2f5;border-radius:20px;padding:12px;text-align:center;"><div style="font-size:1.3rem;font-weight:bold;">${Math.floor(gameMoney).toLocaleString()}₽</div><div>БАЛАНС</div></div><div style="background:#f0f2f5;border-radius:20px;padding:12px;text-align:center;"><div style="font-size:1.3rem;font-weight:bold;">${gameTotalProfit.toLocaleString()}₽</div><div>ПРИБЫЛЬ</div></div><div style="background:#f0f2f5;border-radius:20px;padding:12px;text-align:center;"><div style="font-size:1.3rem;font-weight:bold;">${gameInventory.length}</div><div>УСТРОЙСТВ</div></div></div><button id="closeProfile" class="close-btn">ЗАКРЫТЬ</button></div>`; 
         document.body.appendChild(modal); 
         document.getElementById("closeProfile").addEventListener("click", () => modal.remove()); 
     }
@@ -1394,9 +904,8 @@
     }
     
     function resetGame() { 
-        game = { money: 5000, exp: 0, level: 1, inventory: [{ model: "iPhone 6", condition: "Бит экран", buyPrice: 1800, brokenPart: "Экран" }], parts: [], totalSales: 0, totalProfit: 0, discount: 0 }; 
-        usedCodes.clear(); friendsList = []; isAdmin = false;
-        recalcLevel(); currentMarket = generateMarket(); currentSpareMarket = generateSpareMarket(); updateUI(); saveGame(); saveFriends(); 
+        gameMoney = 5000; gameExp = 0; gameLevel = 1; gameInventory = [{ model: "iPhone 6", condition: "Бит экран", buyPrice: 1800, brokenPart: "Экран" }]; gameParts = []; gameTotalSales = 0; gameTotalProfit = 0; 
+        recalcLevel(); currentMarketItems = generateMarket(); currentSpareMarketItems = generateSpareMarket(); updateUI(); saveGame(); 
         showToast("Прогресс сброшен!", "#e74c3c"); 
     }
     
@@ -1429,8 +938,8 @@
                 document.getElementById(`${tab}Section`).classList.add("active"); 
                 document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active")); 
                 btn.classList.add("active"); 
-                if (tab === "market") { currentMarket = generateMarket(); renderMarket(); } 
-                if (tab === "spareMarket") { currentSpareMarket = generateSpareMarket(); renderSpareMarket(); } 
+                if (tab === "market") { currentMarketItems = generateMarket(); renderMarket(); } 
+                if (tab === "spareMarket") { currentSpareMarketItems = generateSpareMarket(); renderSpareMarket(); } 
                 if (tab === "games") { 
                     document.getElementById("gamesList").innerHTML = `
                         <div class="game-card" data-game="slots"><div class="game-icon">🎰</div><strong>СЛОТЫ</strong><p>Покрути барабаны!</p></div>
@@ -1466,23 +975,22 @@
         document.body.appendChild(modal); 
         const input = document.getElementById("nickInput");
         input.focus();
-        document.getElementById("saveNickBtn").addEventListener("click", async () => { 
+        document.getElementById("saveNickBtn").addEventListener("click", () => { 
             let nick = input.value.trim(); 
             if (!nick) { showToast("❌ Введи никнейм!", "#e74c3c"); return; }
             userNickname = nick; saveGame(); modal.remove(); 
-            currentMarket = generateMarket(); currentSpareMarket = generateSpareMarket(); updateUI(); 
-            loadFriends(); await loadGlobalClubs(); loadLeaderboardData();
+            currentMarketItems = generateMarket(); currentSpareMarketItems = generateSpareMarket(); updateUI(); 
+            loadFriends(); loadClubs(); loadLeaderboard();
         }); 
     }
     
-    (async () => {
-        if (!loadGame() || !userNickname) { showNicknameModal(); } 
-        else { currentMarket = generateMarket(); currentSpareMarket = generateSpareMarket(); updateUI(); loadFriends(); await loadGlobalClubs(); loadLeaderboardData(); }
-        initTabs(); initDrawer();
-        document.getElementById("profileBtn").addEventListener("click", showProfile);
-        document.getElementById("leaderboardBtn").addEventListener("click", showGlobalLeaderboardModal);
-        document.getElementById("friendsBtn").addEventListener("click", showFriendsModal);
-    })();
+    // ЗАПУСК
+    if (!loadGame() || !userNickname) { showNicknameModal(); } 
+    else { currentMarketItems = generateMarket(); currentSpareMarketItems = generateSpareMarket(); updateUI(); loadFriends(); loadClubs(); loadLeaderboard(); }
+    initTabs(); initDrawer();
+    document.getElementById("profileBtn").addEventListener("click", showProfile);
+    document.getElementById("leaderboardBtn").addEventListener("click", showGlobalLeaderboardModal);
+    document.getElementById("friendsBtn").addEventListener("click", showFriendsModal);
 </script>
 </body>
 </html>
