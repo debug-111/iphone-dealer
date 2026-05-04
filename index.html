@@ -6,13 +6,20 @@
     <title>iDealer Pro — Симулятор перекупа</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
-        body { background: linear-gradient(135deg, #f5f7fa 0%, #e9eef3 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; padding: 12px; min-height: 100vh; transition: background 0.3s; }
+        body { background: linear-gradient(135deg, #f5f7fa 0%, #e9eef3 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; padding: 12px; min-height: 100vh; transition: all 0.3s; }
+        
+        /* Темы */
         body.dark { background: linear-gradient(135deg, #0a0f1a 0%, #0f1724 100%); color: #e2e8f0; }
+        body.blue { background: linear-gradient(135deg, #1a3a5c 0%, #0f2a44 100%); }
+        body.green { background: linear-gradient(135deg, #1a5c3a 0%, #0f442a 100%); }
+        body.pink { background: linear-gradient(135deg, #5c1a4a 0%, #440f3a 100%); }
+        body.gold { background: linear-gradient(135deg, #5c4a1a 0%, #443a0f 100%); }
+        
         body.dark .level-card, body.dark .market-item, body.dark .phone-card, body.dark .offers-modal,
         body.dark .profile-content, body.dark .nickname-modal, body.dark .shop-modal, body.dark .fullscreen-modal,
-        body.dark .leaderboard-item, body.dark .task-item, body.dark .friend-item, body.dark .admin-panel {
-            background: #1e293b; color: #e2e8f0;
-        }
+        body.dark .leaderboard-item, body.dark .task-item, body.dark .friend-item, body.dark .admin-panel,
+        body.dark .achievement-item { background: #1e293b; color: #e2e8f0; }
+        
         body.dark .tab-btn { background: #1e293b; color: #94a3b8; }
         body.dark .tab-btn.active { background: linear-gradient(135deg, #f39c12, #e67e22); color: white; }
         body.dark .condition-badge { background: #0f1724; color: #e2e8f0; }
@@ -22,11 +29,12 @@
         @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes floatMoney { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-80px) scale(1.2); } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
         
         .container { max-width: 550px; margin: 0 auto; animation: slideUp 0.4s ease-out; }
         .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 8px; flex-wrap: wrap; }
-        .menu-btn, .leaderboard-btn, .profile-btn, .friends-btn { background: linear-gradient(135deg, #2c3e50, #1a252f); border: none; width: 48px; height: 48px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; transition: transform 0.1s; }
-        .menu-btn:active, .leaderboard-btn:active, .profile-btn:active, .friends-btn:active { transform: scale(0.95); }
+        .menu-btn, .leaderboard-btn, .profile-btn, .friends-btn, .guild-btn { background: linear-gradient(135deg, #2c3e50, #1a252f); border: none; width: 48px; height: 48px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; transition: transform 0.1s; }
+        .menu-btn:active, .leaderboard-btn:active, .profile-btn:active, .friends-btn:active, .guild-btn:active { transform: scale(0.95); }
         .balance-box { background: linear-gradient(135deg, #2ecc71, #27ae60); padding: 8px 16px; border-radius: 50px; font-weight: bold; font-size: 1.2rem; color: white; flex: 1; text-align: center; }
         
         .level-card { background: white; border-radius: 24px; padding: 12px 16px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
@@ -46,13 +54,13 @@
         
         .phone-card { background: white; border-radius: 20px; padding: 12px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .phone-info { flex: 1; }
-        .phone-actions { display: flex; gap: 6px; }
+        .phone-actions { display: flex; gap: 6px; flex-wrap: wrap; }
         .sell-btn, .repair-btn { border: none; padding: 8px 12px; border-radius: 40px; font-weight: bold; color: white; cursor: pointer; font-size: 0.7rem; transition: transform 0.1s; }
         .sell-btn:active, .repair-btn:active { transform: scale(0.95); }
         .sell-btn { background: #e67e22; }
         .repair-btn { background: #3498db; }
         .condition-badge { font-size: 0.65rem; padding: 3px 10px; border-radius: 20px; background: #f0f2f5; display: inline-block; margin-top: 4px; }
-        .market-item { background: white; border-radius: 18px; padding: 10px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.06); transition: transform 0.1s; }
+        .market-item { background: white; border-radius: 18px; padding: 10px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.06); transition: transform 0.1s; cursor: pointer; }
         .market-item:active { transform: scale(0.97); }
         .price-tag { font-size: 1rem; font-weight: bold; color: #e67e22; margin: 6px 0; }
         .buy-btn { background: #2ecc71; width: 100%; padding: 6px; border-radius: 40px; border: none; font-weight: bold; color: white; cursor: pointer; font-size: 0.75rem; transition: transform 0.1s; }
@@ -70,8 +78,8 @@
         .fullscreen-header { padding: 16px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: inherit; z-index: 10; }
         .fullscreen-body { flex: 1; overflow-y: auto; padding: 16px; }
         
-        .leaderboard-item, .friend-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f0f2f5; border-radius: 16px; margin: 8px 0; cursor: pointer; transition: transform 0.1s; animation: slideUp 0.2s ease; }
-        .leaderboard-item:active { transform: scale(0.98); }
+        .leaderboard-item, .friend-item, .guild-item, .achievement-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f0f2f5; border-radius: 16px; margin: 8px 0; cursor: pointer; transition: transform 0.1s; animation: slideUp 0.2s ease; }
+        .leaderboard-item:active, .friend-item:active, .guild-item:active { transform: scale(0.98); }
         .leaderboard-rank { font-weight: bold; width: 50px; font-size: 1.2rem; }
         .leaderboard-name { flex: 1; font-weight: 500; }
         .leaderboard-profit { color: #2ecc71; font-weight: bold; }
@@ -79,7 +87,7 @@
         .leaderboard-top-1 { background: linear-gradient(135deg, #ffd700, #ffb347); color: #1a1a2e; animation: glow 1s infinite; }
         .leaderboard-top-2 { background: linear-gradient(135deg, #c0c0c0, #a0a0a0); color: #1a1a2e; }
         .leaderboard-top-3 { background: linear-gradient(135deg, #cd7f32, #b87333); color: #1a1a2e; }
-        body.dark .leaderboard-item, body.dark .friend-item { background: #0f1724; color: #e2e8f0; }
+        body.dark .leaderboard-item, body.dark .friend-item, body.dark .guild-item, body.dark .achievement-item { background: #0f1724; color: #e2e8f0; }
         
         .money-popup { position: fixed; pointer-events: none; z-index: 3000; font-weight: bold; font-size: 1.1rem; color: #2ecc71; text-shadow: 0 0 3px black; animation: floatMoney 0.8s ease-out forwards; }
         button { cursor: pointer; transition: 0.1s; }
@@ -87,38 +95,25 @@
         .code-input { flex: 1; padding: 10px; border-radius: 40px; border: 1px solid #ccc; font-family: monospace; background: white; color: black; }
         body.dark .code-input { background: #0f1724; color: white; border-color: #334155; }
         
-        /* Админ-панель на весь экран */
-        .admin-panel { background: white; border-radius: 32px 32px 0 0; width: 100%; height: 90vh; display: flex; flex-direction: column; overflow: hidden; position: fixed; bottom: 0; left: 0; right: 0; margin: auto; top: auto; border-radius: 28px 28px 0 0; animation: slideUp 0.2s; }
-        .admin-header { padding: 16px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: inherit; }
-        .admin-body { flex: 1; overflow-y: auto; padding: 16px; }
-        .admin-section { margin: 16px 0; padding: 16px; background: #f0f2f5; border-radius: 24px; }
-        body.dark .admin-section { background: #0f1724; }
-        .admin-input { flex: 1; padding: 10px; border-radius: 40px; border: 1px solid #ccc; margin: 5px; background: white; }
-        body.dark .admin-input { background: #1e293b; border-color: #334155; color: white; }
-        .admin-btn { background: #9b59b6; border: none; padding: 8px 16px; border-radius: 40px; color: white; font-weight: bold; margin: 5px; cursor: pointer; }
-        .danger-btn { background: #e74c3c; }
-        .success-btn { background: #2ecc71; }
-        .warning-btn { background: #f39c12; color: #1a1a2e; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .stat-card { background: white; border-radius: 20px; padding: 12px; text-align: center; }
-        body.dark .stat-card { background: #1e293b; }
-        .stat-value { font-size: 1.5rem; font-weight: bold; }
-        .log-item { padding: 6px; border-bottom: 1px solid #ddd; font-size: 0.7rem; }
+        /* Кастомизация */
+        .theme-option { display: inline-block; width: 40px; height: 40px; border-radius: 50%; margin: 5px; cursor: pointer; border: 2px solid transparent; }
+        .theme-option.active { border-color: white; box-shadow: 0 0 5px white; }
+        .theme-dark { background: #1a1a2e; }
+        .theme-blue { background: #1a3a5c; }
+        .theme-green { background: #1a5c3a; }
+        .theme-pink { background: #5c1a4a; }
+        .theme-gold { background: #5c4a1a; }
         
-        .welcome-modal { background: white; border-radius: 48px; padding: 32px 24px; width: 90%; max-width: 340px; text-align: center; animation: slideUp 0.3s ease; }
-        body.dark .welcome-modal { background: #1e293b; }
-        .welcome-modal h2 { margin-bottom: 16px; font-size: 1.8rem; }
-        .welcome-modal p { margin-bottom: 24px; opacity: 0.7; }
-        .welcome-input { width: 100%; padding: 14px; border-radius: 60px; border: 1px solid #ddd; font-size: 1rem; text-align: center; font-family: inherit; margin-bottom: 20px; }
-        body.dark .welcome-input { background: #0f1724; border-color: #334155; color: white; }
-        .welcome-btn { background: linear-gradient(135deg, #2ecc71, #27ae60); width: 100%; padding: 14px; border-radius: 60px; border: none; color: white; font-weight: bold; font-size: 1rem; cursor: pointer; transition: transform 0.1s; }
-        .welcome-btn:active { transform: scale(0.97); }
+        /* Мини-игры */
+        .game-card { background: #f8f9fa; border-radius: 20px; padding: 20px; margin: 16px 0; text-align: center; cursor: pointer; transition: transform 0.1s; }
+        .game-card:active { transform: scale(0.97); }
+        .game-icon { font-size: 3rem; margin-bottom: 10px; }
         
         @keyframes glow { 0% { box-shadow: 0 0 5px rgba(255,215,0,0.3); } 100% { box-shadow: 0 0 20px rgba(255,215,0,0.8); } }
         
         @media (max-width: 480px) {
             body { padding: 8px; }
-            .menu-btn, .leaderboard-btn, .profile-btn, .friends-btn { width: 44px; height: 44px; font-size: 1rem; }
+            .menu-btn, .leaderboard-btn, .profile-btn, .friends-btn, .guild-btn { width: 44px; height: 44px; font-size: 1rem; }
             .balance-box { font-size: 1rem; padding: 6px 12px; }
             .tab-btn { font-size: 0.65rem; padding: 8px 4px; min-width: 75px; }
             .sell-btn, .repair-btn { padding: 6px 8px; font-size: 0.6rem; }
@@ -130,6 +125,7 @@
     <div class="top-bar">
         <button class="menu-btn" id="menuBtn">☰</button>
         <div class="balance-box">💰 <span id="balance">5000</span> ₽</div>
+        <button class="guild-btn" id="guildBtn">🏛️</button>
         <button class="friends-btn" id="friendsBtn">👥</button>
         <button class="leaderboard-btn" id="leaderboardBtn">🏆</button>
         <button class="profile-btn" id="profileBtn">👤</button>
@@ -145,38 +141,39 @@
         <button class="tab-btn active" data-tab="inventory">📱 АЙФОНЫ</button>
         <button class="tab-btn" data-tab="market">🛒 РЫНОК</button>
         <button class="tab-btn" data-tab="spareMarket">🔧 ЗАПЧАСТИ</button>
+        <button class="tab-btn" data-tab="games">🎮 ИГРЫ</button>
     </div>
     
     <div id="inventorySection" class="section active"><div class="inventory-grid" id="inventoryList"></div></div>
     <div id="marketSection" class="section"><div class="market-grid" id="marketGrid"></div></div>
     <div id="spareMarketSection" class="section"><div class="market-grid" id="spareMarketGrid"></div></div>
+    <div id="gamesSection" class="section"><div class="inventory-grid" id="gamesList"></div></div>
 </div>
 
 <div id="drawerOverlay" class="drawer-overlay"></div>
 <div id="drawerMenu" class="drawer-menu">
     <h3 style="margin-bottom: 20px;">🍏 iDealer Pro</h3>
     <div class="drawer-item" data-action="daily">📅 Ежедневные задания</div>
-    <div class="drawer-item" data-action="pass">🎫 Перекуп Pass</div>
-    <div class="drawer-item" data-action="shop">💰 Магазин</div>
+    <div class="drawer-item" data-action="achivements">🏆 Достижения</div>
+    <div class="drawer-item" data-action="customize">🎨 Кастомизация</div>
     <div class="drawer-item" data-action="codes">🎁 Секретные коды</div>
     <div class="drawer-item" data-action="theme">🌓 Сменить тему</div>
     <div class="drawer-item" data-action="reset">💣 Сбросить прогресс</div>
 </div>
 
 <script>
-    // ========== GOOGLE SHEETS API ==========
+    // ========== GOOGLE SHEETS ЛИДЕРБОРД ==========
     const LEADERBOARD_URL = "https://script.google.com/macros/s/AKfycbx2vQkAN1YRo40wKQwBK9DpJIZAONpmhiqL-40GiiRBCb3CmcCn3_rHp7RkyO1ZfbqxSg/exec";
     
     let userNickname = "";
     let friendsList = [];
-    let isAdmin = false;
-    let cachedLeaderboard = [];
-    let lastFetch = 0;
-    let adminLogs = [];
-    let bannedPlayers = new Set();
-    let globalTheme = null;
+    let achievements = [];
+    let guilds = [];
+    let currentGuild = null;
+    let marketMultiplier = 1.0;
+    let lastMarketUpdate = 0;
     
-    // ========== БАЗА УСТРОЙСТВ ==========
+    // ========== НОВЫЕ УСТРОЙСТВА ==========
     const DEVICES_DB = [
         { model: "iPhone 6", base: 3500, icon: "📱", minLevel: 1 },
         { model: "iPhone 7", base: 5500, icon: "📱", minLevel: 1 },
@@ -187,14 +184,40 @@
         { model: "iPhone 13", base: 38000, icon: "✨", minLevel: 3 },
         { model: "iPhone 14", base: 52000, icon: "💎", minLevel: 3 },
         { model: "iPhone 15 Pro", base: 85000, icon: "👑", minLevel: 3 },
+        { model: "iPhone 16 Pro", base: 120000, icon: "🔥", minLevel: 4 },
         { model: "iPad Pro", base: 70000, icon: "📱", minLevel: 3 },
+        { model: "MacBook Pro", base: 150000, icon: "💻", minLevel: 4 },
         { model: "Apple Watch Ultra", base: 60000, icon: "⌚", minLevel: 3 },
+        { model: "AirPods Max", base: 45000, icon: "🎧", minLevel: 3 },
+        { model: "HomePod", base: 25000, icon: "🔊", minLevel: 2 },
+        { model: "Apple TV", base: 15000, icon: "📺", minLevel: 2 },
         { model: "Apple Vision Pro", base: 300000, icon: "🥽", minLevel: 5 }
+    ];
+    
+    // ========== РАСШИРЕННЫЙ РЕМОНТ ==========
+    const REPAIR_TYPES = [
+        { name: "Экран", baseCost: 1500, icon: "📱" },
+        { name: "Батарея", baseCost: 1200, icon: "🔋" },
+        { name: "Камера", baseCost: 2000, icon: "📷" },
+        { name: "Динамик", baseCost: 800, icon: "🔊" },
+        { name: "Корпус", baseCost: 3000, icon: "📦" }
     ];
     
     const CONDITIONS = ["Бит экран", "Хорошее", "Идеальное"];
     const COND_MOD = { "Бит экран": 0.45, "Хорошее": 0.85, "Идеальное": 1.3 };
     const COND_COLORS = { "Бит экран": "#e74c3c", "Хорошее": "#2ecc71", "Идеальное": "#3498db" };
+    
+    // ========== ДОСТИЖЕНИЯ ==========
+    const ACHIEVEMENTS = [
+        { id: "first_sale", name: "Первая продажа", desc: "Продай первый телефон", rewardMoney: 1000, rewardExp: 50, unlocked: false },
+        { id: "million", name: "Миллионер", desc: "Заработай 1 000 000 ₽", rewardMoney: 100000, rewardExp: 500, unlocked: false },
+        { id: "level5", name: "Опытный", desc: "Достигни 5 уровня", rewardMoney: 50000, rewardExp: 200, unlocked: false },
+        { id: "level10", name: "Мастер", desc: "Достигни 10 уровня", rewardMoney: 100000, rewardExp: 500, unlocked: false },
+        { id: "repair_master", name: "Мастер ремонта", desc: "Почини 10 телефонов", rewardMoney: 25000, rewardExp: 150, unlocked: false },
+        { id: "collector", name: "Коллекционер", desc: "Собери 10 разных телефонов", rewardMoney: 50000, rewardExp: 200, unlocked: false },
+        { id: "rich", name: "Богач", desc: "Имей 5 000 000 ₽ на счету", rewardMoney: 500000, rewardExp: 1000, unlocked: false },
+        { id: "guild_leader", name: "Лидер гильдии", desc: "Создай свою гильдию", rewardMoney: 100000, rewardExp: 300, unlocked: false }
+    ];
     
     // ========== СЕКРЕТНЫЕ КОДЫ ==========
     const SECRET_CODES = {
@@ -205,99 +228,306 @@
         "LEVELBOOST": { exp: 250, msg: "+250 опыта!" },
         "GODLEVEL": { exp: 1000, msg: "+1000 опыта!" },
         "APPLEVISION": { device: { model: "Apple Vision Pro", condition: "Идеальное", buyPrice: 0, brokenPart: null }, msg: "Apple Vision Pro получен!" },
-        "ULTRAWATCH": { device: { model: "Apple Watch Ultra", condition: "Идеальное", buyPrice: 0, brokenPart: null }, msg: "Apple Watch Ultra!" },
-        "MILIONAIRE": { money: 1000000, msg: "1 000 000 ₽!" },
-        "BILLIONAIRE": { money: 1000000000, msg: "1 МИЛЛИАРД ₽!" },
-        "KINGOFDEALERS": { money: 5000000, device: { model: "iPhone 15 Pro", condition: "Идеальное", buyPrice: 0, brokenPart: null }, msg: "5 000 000 ₽ + iPhone 15 Pro!" },
-        "DISCOUNT20": { discount: 20, msg: "Скидка 20% на всё!" },
-        "FREEIPAD": { device: { model: "iPad Pro", condition: "Идеальное", buyPrice: 0, brokenPart: null }, msg: "iPad Pro бесплатно!" },
-        "WELCOME2025": { money: 15000, exp: 50, msg: "15 000 ₽ + 50 опыта!" },
-        "HAPPYDEAL": { money: 100000, msg: "100 000 ₽!" },
-        "ADMIN777": { admin: true, msg: "👑 Админ-панель разблокирована!" }
+        "MACBOOK": { device: { model: "MacBook Pro", condition: "Идеальное", buyPrice: 0, brokenPart: null }, msg: "MacBook Pro получен!" },
+        "MILLION": { money: 1000000, msg: "1 000 000 ₽!" },
+        "BILLION": { money: 1000000000, msg: "1 МИЛЛИАРД ₽!" }
     };
     
-    let game = { money: 5000, exp: 0, level: 1, inventory: [{ model: "iPhone 6", condition: "Бит экран", buyPrice: 1800, brokenPart: "Экран" }], parts: [], totalSales: 0, totalProfit: 0, discount: 0 };
+    let game = { money: 5000, exp: 0, level: 1, inventory: [{ model: "iPhone 6", condition: "Бит экран", buyPrice: 1800, brokenPart: "Экран" }], parts: [], totalSales: 0, totalProfit: 0, discount: 0, repairsDone: 0 };
     let currentMarket = [], currentSpareMarket = [];
     let usedCodes = new Set();
+    let cachedLeaderboard = [];
+    let lastFetch = 0;
     
-    // ========== ГЛОБАЛЬНЫЕ ФУНКЦИИ ==========
-    async function sendToGoogle(action, data) {
-        try {
-            await fetch(LEADERBOARD_URL + "?action=" + action + "&data=" + encodeURIComponent(JSON.stringify(data)), { method: "GET", mode: "no-cors" });
-        } catch(e) {}
+    // ========== АПДЕЙТ РЫНКА (АКЦИИ) ==========
+    function updateMarketPrices() {
+        const now = Date.now();
+        if (now - lastMarketUpdate > 300000) { // каждые 5 минут
+            marketMultiplier = 0.7 + Math.random() * 0.8;
+            lastMarketUpdate = now;
+            currentMarket = generateMarket();
+            renderMarket();
+            showToast(`📈 Рынок обновлён! Цены ${marketMultiplier > 1 ? "выросли" : "упали"} на ${Math.abs(Math.round((marketMultiplier-1)*100))}%`, "#f39c12");
+        }
     }
     
-    async function fetchGlobalData() {
-        try {
-            const response = await fetch(LEADERBOARD_URL + "?action=getAll&t=" + Date.now());
-            const result = await response.json();
-            return result;
-        } catch(e) { return null; }
-    }
-    
-    async function loadGlobalSettings() {
-        const data = await fetchGlobalData();
-        if (data) {
-            if (data.banned) bannedPlayers = new Set(data.banned);
-            if (data.globalTheme) {
-                globalTheme = data.globalTheme;
-                if (globalTheme === "dark") document.body.classList.add("dark");
-                else document.body.classList.remove("dark");
+    // ========== ДОСТИЖЕНИЯ ==========
+    function checkAchievements() {
+        ACHIEVEMENTS.forEach(ach => {
+            if (!ach.unlocked) {
+                let unlocked = false;
+                if (ach.id === "first_sale" && game.totalSales >= 1) unlocked = true;
+                if (ach.id === "million" && game.totalProfit >= 1000000) unlocked = true;
+                if (ach.id === "level5" && game.level >= 5) unlocked = true;
+                if (ach.id === "level10" && game.level >= 10) unlocked = true;
+                if (ach.id === "repair_master" && game.repairsDone >= 10) unlocked = true;
+                if (ach.id === "collector" && game.inventory.length >= 10) unlocked = true;
+                if (ach.id === "rich" && game.money >= 5000000) unlocked = true;
+                
+                if (unlocked) {
+                    ach.unlocked = true;
+                    game.money += ach.rewardMoney;
+                    addExp(ach.rewardExp);
+                    showToast(`🏆 ДОСТИЖЕНИЕ: ${ach.name}! +${ach.rewardMoney}₽, +${ach.rewardExp} опыта`, "#f39c12");
+                    addLog("🏆 ДОСТИЖЕНИЕ", `Получено: ${ach.name}`);
+                }
             }
+        });
+        saveAchievements();
+    }
+    
+    function saveAchievements() {
+        localStorage.setItem("achievements", JSON.stringify(ACHIEVEMENTS));
+    }
+    
+    function loadAchievements() {
+        const saved = localStorage.getItem("achievements");
+        if (saved) {
+            const loaded = JSON.parse(saved);
+            loaded.forEach((ach, i) => { if (ach.unlocked) ACHIEVEMENTS[i].unlocked = true; });
         }
-        if (bannedPlayers.has(userNickname)) {
-            showToast("❌ ВЫ ЗАБАНЕНЫ!", "#e74c3c");
-            resetGame();
+    }
+    
+    function showAchievementsModal() {
+        let modal = document.createElement("div");
+        modal.className = "modal-overlay";
+        let html = `<div class="fullscreen-modal"><div class="fullscreen-header"><h3>🏆 ДОСТИЖЕНИЯ</h3><button id="closeAch" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body">`;
+        ACHIEVEMENTS.forEach(ach => {
+            html += `<div class="achievement-item" style="${ach.unlocked ? 'border-left: 4px solid #2ecc71;' : 'opacity:0.6;'}">
+                        <div><strong>${ach.name}</strong><br><small>${ach.desc}</small></div>
+                        <div>${ach.unlocked ? '✅' : '🔒'}</div>
+                    </div>`;
+        });
+        html += `</div></div>`;
+        modal.innerHTML = html;
+        document.body.appendChild(modal);
+        document.getElementById("closeAch").addEventListener("click", () => modal.remove());
+    }
+    
+    // ========== КАСТОМИЗАЦИЯ ==========
+    function showCustomizeModal() {
+        let modal = document.createElement("div");
+        modal.className = "modal-overlay";
+        modal.innerHTML = `<div class="fullscreen-modal"><div class="fullscreen-header"><h3>🎨 КАСТОМИЗАЦИЯ</h3><button id="closeCust" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body">
+            <h4>Выбери тему:</h4>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;margin:16px 0;">
+                <div class="theme-option theme-dark" data-theme="dark"></div>
+                <div class="theme-option theme-blue" data-theme="blue"></div>
+                <div class="theme-option theme-green" data-theme="green"></div>
+                <div class="theme-option theme-pink" data-theme="pink"></div>
+                <div class="theme-option theme-gold" data-theme="gold"></div>
+            </div>
+        </div></div>`;
+        document.body.appendChild(modal);
+        document.querySelectorAll(".theme-option").forEach(opt => {
+            opt.addEventListener("click", () => {
+                const theme = opt.dataset.theme;
+                document.body.classList.remove("dark", "blue", "green", "pink", "gold");
+                if (theme !== "light") document.body.classList.add(theme);
+                localStorage.setItem("globalTheme", theme);
+                addLog("🎨 ТЕМА", `Тема изменена на ${theme}`);
+                modal.remove();
+            });
+        });
+        document.getElementById("closeCust").addEventListener("click", () => modal.remove());
+    }
+    
+    // ========== ГИЛЬДИИ/КЛУБЫ ==========
+    function loadGuilds() {
+        const saved = localStorage.getItem("guilds");
+        if (saved) guilds = JSON.parse(saved);
+        const savedGuild = localStorage.getItem("currentGuild");
+        if (savedGuild) currentGuild = JSON.parse(savedGuild);
+    }
+    
+    function saveGuilds() {
+        localStorage.setItem("guilds", JSON.stringify(guilds));
+        if (currentGuild) localStorage.setItem("currentGuild", JSON.stringify(currentGuild));
+    }
+    
+    function createGuild(name) {
+        if (guilds.find(g => g.name === name)) { showToast("❌ Гильдия с таким именем уже существует!", "#e74c3c"); return; }
+        currentGuild = { name: name, owner: userNickname, members: [userNickname], budget: 0, created: Date.now() };
+        guilds.push(currentGuild);
+        saveGuilds();
+        addLog("🏛️ ГИЛЬДИЯ", `Создал гильдию "${name}"`);
+        showToast(`✅ Гильдия "${name}" создана!`, "#2ecc71");
+        checkAchievements();
+    }
+    
+    function joinGuild(guildName) {
+        const guild = guilds.find(g => g.name === guildName);
+        if (!guild) { showToast("❌ Гильдия не найдена!", "#e74c3c"); return; }
+        if (guild.members.includes(userNickname)) { showToast("❌ Вы уже в этой гильдии!", "#e74c3c"); return; }
+        guild.members.push(userNickname);
+        currentGuild = guild;
+        saveGuilds();
+        addLog("🏛️ ГИЛЬДИЯ", `Вступил в гильдию "${guildName}"`);
+        showToast(`✅ Вы вступили в гильдию "${guildName}"!`, "#2ecc71");
+    }
+    
+    function donateToGuild(amount) {
+        if (!currentGuild) { showToast("❌ Вы не состоите в гильдии!", "#e74c3c"); return; }
+        if (game.money < amount) { showToast("❌ Не хватает денег!", "#e74c3c"); return; }
+        game.money -= amount;
+        currentGuild.budget += amount;
+        saveGuilds();
+        saveGame();
+        addLog("🏛️ ГИЛЬДИЯ", `Пожертвовал ${amount} ₽ в гильдию "${currentGuild.name}"`);
+        showToast(`✅ Вы пожертвовали ${amount} ₽ в гильдию!`, "#2ecc71");
+    }
+    
+    function showGuildsModal() {
+        loadGuilds();
+        let modal = document.createElement("div");
+        modal.className = "modal-overlay";
+        let html = `<div class="fullscreen-modal"><div class="fullscreen-header"><h3>🏛️ ГИЛЬДИИ И КЛУБЫ</h3><button id="closeGuild" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body">`;
+        
+        if (currentGuild) {
+            html += `<div class="guild-item" style="flex-direction:column;align-items:flex-start;">
+                        <strong>📛 ${currentGuild.name}</strong>
+                        <small>👑 Владелец: ${currentGuild.owner}</small>
+                        <small>👥 Участников: ${currentGuild.members.length}</small>
+                        <small>💰 Бюджет: ${currentGuild.budget.toLocaleString()} ₽</small>
+                        <button id="donateBtn" style="margin-top:10px;background:#2ecc71;border:none;padding:8px;border-radius:40px;">💰 Пожертвовать</button>
+                        <button id="leaveGuildBtn" style="margin-top:5px;background:#e74c3c;border:none;padding:8px;border-radius:40px;">🚪 Покинуть гильдию</button>
+                    </div>`;
         }
-    }
-    
-    async function banPlayerGlobally(username) {
-        bannedPlayers.add(username);
-        await sendToGoogle("ban", username);
-        addLog("🔨 БАН", `Игрок ${username} забанен глобально`);
-        showToast(`✅ ${username} ЗАБАНЕН!`, "#e74c3c");
-        if (username === userNickname) {
-            setTimeout(() => { resetGame(); showToast("❌ ВЫ ЗАБАНЕНЫ!", "#e74c3c"); }, 500);
+        
+        html += `<div style="margin:16px 0;"><input type="text" id="newGuildName" class="code-input" placeholder="Название новой гильдии"><button id="createGuildBtn" style="background:#9b59b6;padding:10px;border-radius:40px;margin-top:5px;">🏛️ Создать гильдию</button></div>`;
+        html += `<div><input type="text" id="joinGuildName" class="code-input" placeholder="Название гильдии для вступления"><button id="joinGuildBtn" style="background:#2ecc71;padding:10px;border-radius:40px;margin-top:5px;">🤝 Вступить в гильдию</button></div>`;
+        
+        if (guilds.length > 0) {
+            html += `<h4 style="margin-top:16px;">📋 СПИСОК ГИЛЬДИЙ:</h4>`;
+            guilds.forEach(g => {
+                html += `<div class="guild-item" style="justify-content:space-between;">
+                            <div><strong>${g.name}</strong><br><small>👑 ${g.owner} | 👥 ${g.members.length}</small></div>
+                            <button class="join-existing" data-name="${g.name}" style="background:#2ecc71;border:none;padding:4px 12px;border-radius:30px;">Вступить</button>
+                        </div>`;
+            });
         }
+        
+        html += `</div></div>`;
+        modal.innerHTML = html;
+        document.body.appendChild(modal);
+        
+        document.getElementById("createGuildBtn")?.addEventListener("click", () => {
+            const name = document.getElementById("newGuildName").value.trim();
+            if (name) createGuild(name);
+        });
+        document.getElementById("joinGuildBtn")?.addEventListener("click", () => {
+            const name = document.getElementById("joinGuildName").value.trim();
+            if (name) joinGuild(name);
+        });
+        document.getElementById("donateBtn")?.addEventListener("click", () => {
+            let amount = prompt("Сколько пожертвовать?", "10000");
+            if (amount) donateToGuild(parseInt(amount));
+            modal.remove();
+            setTimeout(() => showGuildsModal(), 500);
+        });
+        document.getElementById("leaveGuildBtn")?.addEventListener("click", () => {
+            currentGuild = null;
+            saveGuilds();
+            addLog("🏛️ ГИЛЬДИЯ", "Покинул гильдию");
+            showToast("❌ Вы покинули гильдию!", "#e74c3c");
+            modal.remove();
+            setTimeout(() => showGuildsModal(), 500);
+        });
+        document.querySelectorAll(".join-existing").forEach(btn => {
+            btn.addEventListener("click", () => {
+                joinGuild(btn.dataset.name);
+                modal.remove();
+                setTimeout(() => showGuildsModal(), 500);
+            });
+        });
+        document.getElementById("closeGuild").addEventListener("click", () => modal.remove());
     }
     
-    async function unbanPlayerGlobally(username) {
-        bannedPlayers.delete(username);
-        await sendToGoogle("unban", username);
-        addLog("🔓 РАЗБАН", `Игрок ${username} разбанен`);
-        showToast(`✅ ${username} разбанен!`, "#2ecc71");
-    }
-    
-    async function setGlobalTheme(theme) {
-        globalTheme = theme;
-        if (theme === "dark") document.body.classList.add("dark");
-        else document.body.classList.remove("dark");
-        await sendToGoogle("theme", theme);
-        addLog("🎨 ТЕМА", `Глобальная тема изменена на ${theme}`);
-        showToast(`🌓 Тема изменена на ${theme} для всех!`, "#f39c12");
-    }
-    
-    async function addGlobalLog(action, details) {
-        const log = { time: new Date().toLocaleTimeString(), action, details, user: userNickname };
-        adminLogs.unshift(log);
-        if (adminLogs.length > 100) adminLogs.pop();
-        await sendToGoogle("log", adminLogs.slice(0, 30));
-        localStorage.setItem("adminLogs", JSON.stringify(adminLogs));
-    }
-    
-    function addLog(action, details) {
-        addGlobalLog(action, details);
-    }
-    
-    function loadLogs() {
-        const saved = localStorage.getItem("adminLogs");
-        if (saved) adminLogs = JSON.parse(saved);
+    // ========== МИНИ-ИГРЫ ==========
+    function showGamesModal() {
+        let modal = document.createElement("div");
+        modal.className = "modal-overlay";
+        modal.innerHTML = `<div class="fullscreen-modal"><div class="fullscreen-header"><h3>🎮 МИНИ-ИГРЫ</h3><button id="closeGames" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body">
+            <div class="game-card" data-game="casino">
+                <div class="game-icon">🎰</div>
+                <strong>КАЗИНО</strong>
+                <p>Удвой свои деньги!</p>
+            </div>
+            <div class="game-card" data-game="guess">
+                <div class="game-icon">🔮</div>
+                <strong>УГАДАЙ ЦЕНУ</strong>
+                <p>Угадай цену телефона и выиграй!</p>
+            </div>
+            <div class="game-card" data-game="assemble">
+                <div class="game-icon">🔧</div>
+                <strong>СОБЕРИ IPHONE</strong>
+                <p>Собери телефон из деталей!</p>
+            </div>
+        </div></div>`;
+        document.body.appendChild(modal);
+        
+        document.querySelectorAll(".game-card").forEach(card => {
+            card.addEventListener("click", () => {
+                const game = card.dataset.game;
+                if (game === "casino") {
+                    let bet = prompt("Сколько ставишь? (от 100 до 10000)", "1000");
+                    if (bet) {
+                        bet = parseInt(bet);
+                        if (bet > game.money) showToast("❌ Не хватает денег!", "#e74c3c");
+                        else {
+                            const win = Math.random() < 0.45;
+                            if (win) {
+                                game.money += bet;
+                                showToast(`🎰 ВЫ ВЫИГРАЛИ! +${bet} ₽`, "#2ecc71");
+                                addLog("🎰 КАЗИНО", `Выиграл ${bet} ₽`);
+                            } else {
+                                game.money -= bet;
+                                showToast(`🎰 ВЫ ПРОИГРАЛИ! -${bet} ₽`, "#e74c3c");
+                                addLog("🎰 КАЗИНО", `Проиграл ${bet} ₽`);
+                            }
+                            updateUI();
+                            saveGame();
+                        }
+                    }
+                }
+                if (game === "guess") {
+                    const devices = ["iPhone 15 Pro", "MacBook Pro", "Apple Vision Pro"];
+                    const prices = [85000, 150000, 300000];
+                    const idx = Math.floor(Math.random() * devices.length);
+                    const guess = prompt(`Сколько стоит ${devices[idx]}? (введите число)`, "0");
+                    if (guess) {
+                        const diff = Math.abs(parseInt(guess) - prices[idx]);
+                        if (diff < 5000) {
+                            const winAmount = 25000;
+                            game.money += winAmount;
+                            showToast(`🔮 Правильно! +${winAmount} ₽`, "#2ecc71");
+                            addLog("🔮 УГАДАЙ", `Выиграл ${winAmount} ₽, цена была ${prices[idx]}`);
+                        } else if (diff < 15000) {
+                            const winAmount = 5000;
+                            game.money += winAmount;
+                            showToast(`🔮 Близко! +${winAmount} ₽`, "#f39c12");
+                            addLog("🔮 УГАДАЙ", `Выиграл ${winAmount} ₽, цена была ${prices[idx]}`);
+                        } else {
+                            showToast(`🔮 Не угадал! Правильная цена: ${prices[idx]} ₽`, "#e74c3c");
+                        }
+                        updateUI();
+                        saveGame();
+                    }
+                }
+                if (game === "assemble") {
+                    showToast("🔧 Собери iPhone из деталей (скоро будет)", "#f39c12");
+                }
+                modal.remove();
+            });
+        });
+        
+        document.getElementById("closeGames").addEventListener("click", () => modal.remove());
     }
     
     // ========== ДРУЗЬЯ ==========
     function saveFriends() { localStorage.setItem("friendsList", JSON.stringify(friendsList)); }
     function loadFriends() { const saved = localStorage.getItem("friendsList"); if (saved) friendsList = JSON.parse(saved); updateFriendsBtn(); }
-    function updateFriendsBtn() { const count = friendsList.length; const btn = document.getElementById("friendsBtn"); if (btn) btn.style.background = count > 0 ? "linear-gradient(135deg, #2ecc71, #27ae60)" : "linear-gradient(135deg, #2c3e50, #1a252f)"; }
+    function updateFriendsBtn() { const btn = document.getElementById("friendsBtn"); if (btn) btn.style.background = friendsList.length > 0 ? "linear-gradient(135deg, #2ecc71, #27ae60)" : "linear-gradient(135deg, #2c3e50, #1a252f)"; }
     
     function sendFriendRequest(toUser) {
         if (toUser === userNickname) { showToast("❌ Нельзя добавить себя!", "#e74c3c"); return; }
@@ -347,11 +577,15 @@
         document.getElementById("closeFriends").addEventListener("click", () => modal.remove());
     }
     
-    // ========== ЛИДЕРБОРД ==========
+    // ========== ЛИДЕРБОРД (с кэшем для скорости) ==========
     async function sendToLeaderboard() {
-        if (bannedPlayers.has(userNickname)) return;
         try {
-            await fetch(LEADERBOARD_URL + "?action=update&username=" + encodeURIComponent(userNickname) + "&profit=" + game.totalProfit + "&level=" + game.level, { method: "GET", mode: "no-cors" });
+            await fetch(LEADERBOARD_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username: userNickname, profit: game.totalProfit, level: game.level })
+            });
             cachedLeaderboard = [];
             lastFetch = 0;
         } catch(e) {}
@@ -360,45 +594,15 @@
     async function fetchLeaderboard(force = false) {
         if (force || lastFetch < Date.now() - 5000 || cachedLeaderboard.length === 0) {
             try {
-                const response = await fetch(LEADERBOARD_URL + "?action=getLeaderboard&t=" + Date.now());
+                const response = await fetch(LEADERBOARD_URL + "?t=" + Date.now());
                 const data = await response.json();
                 let leaderboard = data.leaderboard || [];
-                leaderboard = leaderboard.filter(p => !bannedPlayers.has(p.username));
                 leaderboard.sort((a, b) => b.profit - a.profit);
                 cachedLeaderboard = leaderboard.slice(0, 50);
                 lastFetch = Date.now();
-            } catch(e) {
-                if (cachedLeaderboard.length === 0) cachedLeaderboard = [];
-            }
+            } catch(e) { if (cachedLeaderboard.length === 0) cachedLeaderboard = []; }
         }
         return cachedLeaderboard;
-    }
-    
-    async function resetLeaderboard() {
-        if (!isAdmin) return;
-        await sendToGoogle("reset", "");
-        cachedLeaderboard = [];
-        lastFetch = 0;
-        addLog("🗑️ ЛИДЕРБОРД", "Полное обнуление лидерборда");
-        showToast("🏆 Лидерборд ОБНУЛЕН!", "#f39c12");
-    }
-    
-    async function deletePlayerFromLeaderboard(username) {
-        if (!isAdmin) return;
-        await sendToGoogle("delete", username);
-        cachedLeaderboard = [];
-        lastFetch = 0;
-        addLog("❌ УДАЛЕНИЕ", `Удалён игрок ${username} из лидерборда`);
-        showToast(`✅ Игрок ${username} удалён!`, "#2ecc71");
-    }
-    
-    async function setPlayerProfit(username, profit) {
-        if (!isAdmin) return;
-        await sendToGoogle("setProfit", { username, profit });
-        cachedLeaderboard = [];
-        lastFetch = 0;
-        addLog("💰 ИЗМЕНЕНИЕ", `Игроку ${username} установлена прибыль ${profit}`);
-        showToast(`✅ Прибыль ${username} изменена!`, "#2ecc71");
     }
     
     async function showGlobalLeaderboardModal() {
@@ -428,8 +632,6 @@
                             <div class="leaderboard-level">⭐ ${player.level}</div>
                             ${player.username !== userNickname && !friendsList.includes(player.username) ? `<button class="add-friend-lb" data-user="${player.username}" style="background:#2ecc71;border:none;padding:4px 10px;border-radius:30px;color:white;font-size:0.7rem;">➕</button>` : ''}
                             ${friendsList.includes(player.username) ? `<span style="color:#2ecc71;font-size:0.7rem;">✓ Друг</span>` : ''}
-                            ${isAdmin ? `<button class="admin-ban-lb" data-user="${player.username}" style="background:#e74c3c;border:none;padding:4px 10px;border-radius:30px;color:white;font-size:0.7rem;margin-left:5px;">🔨</button>` : ''}
-                            ${isAdmin ? `<button class="admin-edit-lb" data-user="${player.username}" style="background:#f39c12;border:none;padding:4px 10px;border-radius:30px;color:black;font-size:0.7rem;margin-left:5px;">✏️</button>` : ''}
                         </div>`;
             });
         }
@@ -442,149 +644,7 @@
                 btn.remove();
             });
         });
-        document.querySelectorAll(".admin-ban-lb").forEach(btn => {
-            btn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                banPlayerGlobally(btn.dataset.user);
-            });
-        });
-        document.querySelectorAll(".admin-edit-lb").forEach(btn => {
-            btn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                let newProfit = prompt("Введите новую прибыль:", "1000000");
-                if (newProfit) setPlayerProfit(btn.dataset.user, parseInt(newProfit));
-            });
-        });
         document.getElementById("closeLeaderboard").addEventListener("click", () => modal.remove());
-    }
-    
-    // ========== АДМИН-ПАНЕЛЬ НА ВЕСЬ ЭКРАН ==========
-    function getLiveStats() {
-        return {
-            totalPlayers: cachedLeaderboard.length,
-            totalProfit: cachedLeaderboard.reduce((sum, p) => sum + p.profit, 0),
-            top1: cachedLeaderboard[0] || null
-        };
-    }
-    
-    function showAdminPanel() {
-        if (!isAdmin) return;
-        const stats = getLiveStats();
-        let modal = document.createElement("div");
-        modal.className = "modal-overlay";
-        modal.innerHTML = `<div class="admin-panel">
-            <div class="admin-header">
-                <h2>👑 АДМИН-ПАНЕЛЬ</h2>
-                <button id="closeAdminPanel" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button>
-            </div>
-            <div class="admin-body">
-                <div class="admin-section">
-                    <h3>📊 ЖИВАЯ СТАТИСТИКА</h3>
-                    <div class="stats-grid" id="statsGrid">
-                        <div class="stat-card"><div class="stat-value" id="statPlayers">${stats.totalPlayers}</div><div>👥 Игроков</div></div>
-                        <div class="stat-card"><div class="stat-value" id="statProfit">${stats.totalProfit.toLocaleString()}₽</div><div>💰 Общая прибыль</div></div>
-                        <div class="stat-card"><div class="stat-value" id="statTopName">${stats.top1?.username || "-"}</div><div>🏆 Топ-1</div></div>
-                        <div class="stat-card"><div class="stat-value" id="statTopProfit">${stats.top1?.profit?.toLocaleString() || "0"}₽</div><div>💰 Топ-1 прибыль</div></div>
-                    </div>
-                    <button id="refreshStatsBtn" class="admin-btn success-btn">🔄 Обновить</button>
-                </div>
-                
-                <div class="admin-section">
-                    <h3>💰 УПРАВЛЕНИЕ БАЛАНСОМ</h3>
-                    <input type="number" id="adminMoney" class="admin-input" placeholder="Сумма">
-                    <button id="addMoneyBtn" class="admin-btn success-btn">➕ Добавить деньги</button>
-                    <button id="setMoneyBtn" class="admin-btn">💵 Установить баланс</button>
-                </div>
-                
-                <div class="admin-section">
-                    <h3>⭐ УПРАВЛЕНИЕ ОПЫТОМ</h3>
-                    <input type="number" id="adminExp" class="admin-input" placeholder="Опыт">
-                    <button id="addExpBtn" class="admin-btn success-btn">➕ Добавить опыт</button>
-                </div>
-                
-                <div class="admin-section">
-                    <h3>🏆 УПРАВЛЕНИЕ ЛИДЕРБОРДОМ</h3>
-                    <button id="resetLeaderboardBtn" class="admin-btn danger-btn">🗑️ ОБНУЛИТЬ ВСЕХ</button>
-                    <button id="refreshLeaderboardBtn" class="admin-btn">🔄 Обновить</button>
-                    <div style="margin-top:10px;">
-                        <input type="text" id="editPlayerName" class="admin-input" placeholder="Ник" style="width:60%;">
-                        <input type="number" id="editPlayerProfit" class="admin-input" placeholder="Сумма" style="width:35%;">
-                        <button id="editPlayerBtn" class="admin-btn warning-btn">✏️ Изменить</button>
-                    </div>
-                </div>
-                
-                <div class="admin-section">
-                    <h3>🛡️ БАН ИГРОКОВ</h3>
-                    <input type="text" id="banPlayerName" class="admin-input" placeholder="Ник">
-                    <button id="banPlayerBtn" class="admin-btn danger-btn">🔨 ЗАБАНИТЬ</button>
-                    <button id="unbanPlayerBtn" class="admin-btn success-btn">🔓 РАЗБАНИТЬ</button>
-                </div>
-                
-                <div class="admin-section">
-                    <h3>🎨 ГЛОБАЛЬНАЯ ТЕМА</h3>
-                    <button id="setLightThemeBtn" class="admin-btn">☀️ Светлая</button>
-                    <button id="setDarkThemeBtn" class="admin-btn">🌙 Тёмная</button>
-                </div>
-                
-                <div class="admin-section">
-                    <h3>📜 ЛОГИ ДЕЙСТВИЙ</h3>
-                    <div id="logsContainer" style="max-height:200px;overflow-y:auto;font-size:0.7rem;"></div>
-                    <button id="clearLogsBtn" class="admin-btn danger-btn">🗑️ Очистить</button>
-                </div>
-            </div>
-        </div>`;
-        document.body.appendChild(modal);
-        
-        function updateStats() {
-            const newStats = getLiveStats();
-            document.getElementById("statPlayers").innerText = newStats.totalPlayers;
-            document.getElementById("statProfit").innerText = newStats.totalProfit.toLocaleString();
-            document.getElementById("statTopName").innerText = newStats.top1?.username || "-";
-            document.getElementById("statTopProfit").innerText = newStats.top1?.profit?.toLocaleString() || "0";
-        }
-        
-        function updateLogs() {
-            const container = document.getElementById("logsContainer");
-            if (container) {
-                container.innerHTML = adminLogs.slice(0, 30).map(l => `<div class="log-item">[${l.time}] ${l.user}: ${l.action} - ${l.details}</div>`).join('');
-                if (adminLogs.length === 0) container.innerHTML = "<div>Нет логов</div>";
-            }
-        }
-        
-        updateLogs();
-        
-        document.getElementById("refreshStatsBtn").onclick = async () => { await fetchLeaderboard(true); updateStats(); };
-        document.getElementById("addMoneyBtn").onclick = () => {
-            let amount = parseInt(document.getElementById("adminMoney").value);
-            if (amount) { game.money += amount; game.totalProfit += amount; updateUI(); saveGame(); addLog("💰 ДЕНЬГИ", `+${amount} ₽ себе`); showToast(`+${amount} ₽`, "#2ecc71"); }
-        };
-        document.getElementById("setMoneyBtn").onclick = () => {
-            let amount = parseInt(document.getElementById("adminMoney").value);
-            if (amount) { game.money = amount; updateUI(); saveGame(); addLog("💰 БАЛАНС", `Установлен баланс: ${amount} ₽`); showToast(`Баланс: ${amount} ₽`, "#2ecc71"); }
-        };
-        document.getElementById("addExpBtn").onclick = () => {
-            let amount = parseInt(document.getElementById("adminExp").value);
-            if (amount) { addExp(amount); addLog("⭐ ОПЫТ", `+${amount} опыта себе`); }
-        };
-        document.getElementById("resetLeaderboardBtn").onclick = () => { if (confirm("Обнулить весь лидерборд?")) resetLeaderboard(); };
-        document.getElementById("refreshLeaderboardBtn").onclick = async () => { await fetchLeaderboard(true); updateStats(); showToast("Обновлено!", "#2ecc71"); };
-        document.getElementById("editPlayerBtn").onclick = () => {
-            let name = document.getElementById("editPlayerName").value.trim();
-            let profit = parseInt(document.getElementById("editPlayerProfit").value);
-            if (name && profit) setPlayerProfit(name, profit);
-        };
-        document.getElementById("banPlayerBtn").onclick = () => {
-            let name = document.getElementById("banPlayerName").value.trim();
-            if (name) banPlayerGlobally(name);
-        };
-        document.getElementById("unbanPlayerBtn").onclick = () => {
-            let name = document.getElementById("banPlayerName").value.trim();
-            if (name) unbanPlayerGlobally(name);
-        };
-        document.getElementById("setLightThemeBtn").onclick = () => setGlobalTheme("light");
-        document.getElementById("setDarkThemeBtn").onclick = () => setGlobalTheme("dark");
-        document.getElementById("clearLogsBtn").onclick = () => { adminLogs = []; localStorage.setItem("adminLogs", JSON.stringify(adminLogs)); updateLogs(); showToast("Логи очищены!", "#e74c3c"); };
-        document.getElementById("closeAdminPanel").onclick = () => modal.remove();
     }
     
     // ========== КОДЫ ==========
@@ -597,16 +657,9 @@
             let code = document.getElementById("codeInput").value.trim().toUpperCase();
             if (SECRET_CODES[code]) {
                 const reward = SECRET_CODES[code];
-                if (reward.admin) {
-                    isAdmin = true;
-                    addLog("👑 АДМИН", "Активировал админ-панель");
-                    showToast(`👑 ${reward.msg}`, "#9b59b6");
-                    showAdminPanel();
-                }
                 if (reward.money) { game.money += reward.money; showMoneyAnimation(reward.money); game.totalProfit += reward.money; addLog("🎁 КОД", `Активирован код ${code}: +${reward.money} ₽`); }
                 if (reward.exp) addExp(reward.exp);
                 if (reward.device) game.inventory.push(reward.device);
-                if (reward.discount) game.discount = reward.discount;
                 showToast(`🎁 ${reward.msg}`, "#2ecc71");
                 updateUI();
                 saveGame();
@@ -619,21 +672,26 @@
     }
     
     // ========== ОСНОВНЫЕ ФУНКЦИИ ==========
+    function addLog(action, details) {
+        console.log(`[${new Date().toLocaleTimeString()}] ${action}: ${details}`);
+    }
+    
     function saveGame() { 
-        if (bannedPlayers.has(userNickname)) return;
         localStorage.setItem("iDealerFinal", JSON.stringify({ 
             money: game.money, exp: game.exp, level: game.level, inventory: game.inventory, 
             parts: game.parts, totalSales: game.totalSales, totalProfit: game.totalProfit, 
             theme: document.body.classList.contains("dark") ? "dark" : "light", 
-            usedCodes: Array.from(usedCodes), nickname: userNickname, discount: game.discount
+            usedCodes: Array.from(usedCodes), nickname: userNickname, discount: game.discount,
+            repairsDone: game.repairsDone
         })); 
         sendToLeaderboard();
+        checkAchievements();
     }
     
     function loadGame() {
         let data = localStorage.getItem("iDealerFinal");
         if (!data) return false;
-        try { let saved = JSON.parse(data); game.money = saved.money; game.exp = saved.exp; game.level = saved.level; game.inventory = saved.inventory; game.parts = saved.parts || []; game.totalSales = saved.totalSales || 0; game.totalProfit = saved.totalProfit || 0; game.discount = saved.discount || 0; if (saved.theme === "dark") document.body.classList.add("dark"); if (saved.usedCodes) usedCodes = new Set(saved.usedCodes); if (saved.nickname) userNickname = saved.nickname; recalcLevel(); return true; } catch(e) { return false; }
+        try { let saved = JSON.parse(data); game.money = saved.money; game.exp = saved.exp; game.level = saved.level; game.inventory = saved.inventory; game.parts = saved.parts || []; game.totalSales = saved.totalSales || 0; game.totalProfit = saved.totalProfit || 0; game.discount = saved.discount || 0; game.repairsDone = saved.repairsDone || 0; if (saved.theme === "dark") document.body.classList.add("dark"); if (saved.usedCodes) usedCodes = new Set(saved.usedCodes); if (saved.nickname) userNickname = saved.nickname; recalcLevel(); return true; } catch(e) { return false; }
     }
     
     function recalcLevel() { let lvl = 1, need = getExpNeeded(lvl), tmp = game.exp; while (tmp >= need && lvl < 30) { tmp -= need; lvl++; need = getExpNeeded(lvl); } game.level = lvl; updateExpUI(); }
@@ -643,47 +701,257 @@
     function showToast(msg, color="#27ae60") { let toast = document.createElement("div"); toast.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:${color};color:white;padding:10px 20px;border-radius:60px;font-weight:bold;z-index:2000;animation:slideUp 0.2s;font-size:0.9rem;z-index:5000;`; toast.innerText = msg; document.body.appendChild(toast); setTimeout(() => toast.remove(), 2000); }
     function showMoneyAnimation(amount) { let popup = document.createElement("div"); popup.className = "money-popup"; popup.innerText = `+${amount.toLocaleString()} ₽`; popup.style.left = (window.innerWidth/2) + "px"; popup.style.top = (window.innerHeight/2) + "px"; document.body.appendChild(popup); setTimeout(() => popup.remove(), 800); }
     function randomCondition() { return CONDITIONS[Math.floor(Math.random() * CONDITIONS.length)]; }
-    function generateMarket() { let available = DEVICES_DB.filter(d => d.minLevel <= game.level); let offers = []; for (let i = 0; i < 8; i++) { let device = available[Math.floor(Math.random() * available.length)]; let condition = randomCondition(); let mult = COND_MOD[condition]; let price = Math.floor(device.base * mult * (0.7 + Math.random() * 0.5)); if (game.discount > 0) price = Math.floor(price * (1 - game.discount / 100)); offers.push({ id: Date.now() + i, model: device.model, icon: device.icon, condition, price: Math.max(1200, price) }); } return offers; }
-    function generateSpareMarket() { let offers = []; for (let i = 0; i < 6; i++) { let device = DEVICES_DB[Math.floor(Math.random() * DEVICES_DB.length)]; let price = Math.floor(device.base * 0.15 * (0.5 + Math.random())); if (game.discount > 0) price = Math.floor(price * (1 - game.discount / 100)); offers.push({ id: Date.now() + i, phoneModel: device.model, partType: "Экран", supplier: ["🏪 Автосервис", "📦 Китай", "🔄 Б/у"][Math.floor(Math.random() * 3)], price: Math.max(300, price) }); } return offers; }
-    function buyDevice(offer) { if (game.money < offer.price) { showToast("Не хватает денег!", "#e74c3c"); return; } game.money -= offer.price; game.inventory.push({ model: offer.model, condition: offer.condition, buyPrice: offer.price, brokenPart: offer.condition === "Бит экран" ? "Экран" : null }); showToast(`📲 Куплен ${offer.model}`, "#2ecc71"); addLog("🛒 ПОКУПКА", `${offer.model} за ${offer.price} ₽`); currentMarket = generateMarket(); renderMarket(); updateUI(); saveGame(); }
-    function buySparePart(part) { if (game.money < part.price) { showToast("Не хватает денег!", "#e74c3c"); return; } game.money -= part.price; game.parts.push({ id: Date.now() + Math.random(), phoneModel: part.phoneModel, partType: part.partType, supplier: part.supplier, price: part.price }); showToast(`🔧 ${part.partType} для ${part.phoneModel} куплен!`, "#3498db"); addLog("🔧 ЗАПЧАСТЬ", `${part.partType} для ${part.phoneModel} за ${part.price} ₽`); currentSpareMarket = generateSpareMarket(); renderSpareMarket(); updateUI(); saveGame(); }
-    function showSellOffers(device, index) { let deviceData = DEVICES_DB.find(d => d.model === device.model); if (!deviceData) return; let baseValue = deviceData.base * COND_MOD[device.condition]; if (device.brokenPart) baseValue *= 0.5; let offers = []; for (let i = 0; i < 3; i++) { let price = Math.floor(baseValue * (0.6 + Math.random() * 0.7)); offers.push(price); } let modal = document.createElement("div"); modal.className = "modal-overlay"; modal.innerHTML = `<div class="offers-modal" style="max-width:340px;width:90%;background:white;border-radius:48px;padding:24px;"><h3>💰 Выбери предложение</h3>${offers.map((price, idx) => `<div class="offer-item" data-offer="${price}" style="background:#f8f9fa;border-radius:20px;padding:12px;margin:10px 0;display:flex;justify-content:space-between;align-items:center;"><div><strong>Перекуп ${idx + 1}</strong></div><div style="font-size:1.2rem;font-weight:bold;color:#e67e22;">${price.toLocaleString()} ₽</div></div>`).join('')}<button id="cancelOffer" class="close-btn">Отмена</button></div>`; document.body.appendChild(modal); document.querySelectorAll(".offer-item").forEach(el => { el.addEventListener("click", () => { let sellPrice = parseInt(el.dataset.offer); game.money += sellPrice; const profit = sellPrice - device.buyPrice; if (profit > 0) { game.totalProfit += profit; addExp(10); } game.inventory.splice(index, 1); game.totalSales++; showMoneyAnimation(sellPrice); addLog("💸 ПРОДАЖА", `${device.model} за ${sellPrice} ₽, прибыль: ${profit} ₽`); showToast(`💰 ПРОДАНО за ${sellPrice.toLocaleString()} ₽`, "#2ecc71"); updateUI(); saveGame(); modal.remove(); }); }); document.getElementById("cancelOffer").addEventListener("click", () => modal.remove()); }
-    function renderInventory() { let container = document.getElementById("inventoryList"); if (!container) return; if (game.inventory.length === 0) { container.innerHTML = "<div style='text-align:center;padding:40px;opacity:0.6;'>📭 Нет устройств</div>"; return; } container.innerHTML = ""; game.inventory.forEach((device, idx) => { let div = document.createElement("div"); div.className = "phone-card"; div.style.borderLeftColor = COND_COLORS[device.condition]; div.innerHTML = `<div class="phone-info"><strong>📱 ${device.model}</strong><div class="condition-badge">${device.condition}${device.brokenPart ? ` 🔨 ${device.brokenPart}` : ""}</div><small>💰 ${device.buyPrice?.toLocaleString()}₽</small></div><div class="phone-actions"><button class="sell-btn">💰 ПРОДАТЬ</button></div>`; div.querySelector(".sell-btn").addEventListener("click", (e) => { e.stopPropagation(); showSellOffers(device, idx); }); container.appendChild(div); }); }
-    function renderMarket() { let container = document.getElementById("marketGrid"); if (!container) return; container.innerHTML = ""; currentMarket.forEach(offer => { let card = document.createElement("div"); card.className = "market-item"; card.style.borderTop = `3px solid ${COND_COLORS[offer.condition]}`; card.innerHTML = `<div style="font-size:1.8rem;">${offer.icon}</div><div style="font-weight:bold;font-size:0.9rem;">${offer.model}</div><div style="font-size:0.65rem;">${offer.condition}</div><div class="price-tag">${offer.price.toLocaleString()} ₽</div><button class="buy-btn">💸 КУПИТЬ</button>`; card.querySelector(".buy-btn").addEventListener("click", (e) => { e.stopPropagation(); buyDevice(offer); }); container.appendChild(card); }); }
-    function renderSpareMarket() { let container = document.getElementById("spareMarketGrid"); if (!container) return; container.innerHTML = ""; currentSpareMarket.forEach(part => { let card = document.createElement("div"); card.className = "market-item"; card.innerHTML = `<div style="font-size:1.5rem;">🔧</div><div style="font-weight:bold;font-size:0.8rem;">${part.partType}</div><div style="font-size:0.7rem;">для ${part.phoneModel}</div><div class="price-tag">${part.price.toLocaleString()} ₽</div><button class="buy-btn">💸 КУПИТЬ</button>`; card.querySelector(".buy-btn").addEventListener("click", (e) => { e.stopPropagation(); buySparePart(part); }); container.appendChild(card); }); }
-    function updateUI() { document.getElementById("balance").innerText = Math.floor(game.money).toLocaleString(); renderInventory(); renderMarket(); renderSpareMarket(); updateExpUI(); }
+    
+    function generateMarket() { 
+        let available = DEVICES_DB.filter(d => d.minLevel <= game.level); 
+        let offers = []; 
+        for (let i = 0; i < 8; i++) { 
+            let device = available[Math.floor(Math.random() * available.length)]; 
+            let condition = randomCondition(); 
+            let mult = COND_MOD[condition]; 
+            let price = Math.floor(device.base * mult * (0.7 + Math.random() * 0.5) * marketMultiplier); 
+            if (game.discount > 0) price = Math.floor(price * (1 - game.discount / 100)); 
+            offers.push({ id: Date.now() + i, model: device.model, icon: device.icon, condition, price: Math.max(1200, price) }); 
+        } 
+        return offers; 
+    }
+    
+    function generateSpareMarket() { 
+        let offers = []; 
+        for (let i = 0; i < 6; i++) { 
+            let device = DEVICES_DB[Math.floor(Math.random() * DEVICES_DB.length)]; 
+            let repairType = REPAIR_TYPES[Math.floor(Math.random() * REPAIR_TYPES.length)]; 
+            let price = Math.floor(device.base * 0.12 * (0.5 + Math.random())); 
+            if (game.discount > 0) price = Math.floor(price * (1 - game.discount / 100)); 
+            offers.push({ id: Date.now() + i, phoneModel: device.model, partType: repairType.name, supplier: ["🏪 Автосервис", "📦 Китай", "🔄 Б/у", "✨ Оригинал"][Math.floor(Math.random() * 4)], price: Math.max(300, price) }); 
+        } 
+        return offers; 
+    }
+    
+    function buyDevice(offer) { 
+        if (game.money < offer.price) { showToast("Не хватает денег!", "#e74c3c"); return; } 
+        game.money -= offer.price; 
+        game.inventory.push({ model: offer.model, condition: offer.condition, buyPrice: offer.price, brokenPart: offer.condition === "Бит экран" ? "Экран" : null }); 
+        showToast(`📲 Куплен ${offer.model}`, "#2ecc71"); 
+        addLog("🛒 ПОКУПКА", `${offer.model} за ${offer.price} ₽`); 
+        currentMarket = generateMarket(); 
+        renderMarket(); 
+        updateUI(); 
+        saveGame(); 
+    }
+    
+    function buySparePart(part) { 
+        if (game.money < part.price) { showToast("Не хватает денег!", "#e74c3c"); return; } 
+        game.money -= part.price; 
+        game.parts.push({ id: Date.now() + Math.random(), phoneModel: part.phoneModel, partType: part.partType, supplier: part.supplier, price: part.price }); 
+        showToast(`🔧 ${part.partType} для ${part.phoneModel} куплен!`, "#3498db"); 
+        addLog("🔧 ЗАПЧАСТЬ", `${part.partType} для ${part.phoneModel} за ${part.price} ₽`); 
+        currentSpareMarket = generateSpareMarket(); 
+        renderSpareMarket(); 
+        updateUI(); 
+        saveGame(); 
+    }
+    
+    function showRepairOptions(device, idx) { 
+        let compatibleParts = game.parts.filter(p => p.phoneModel === device.model && p.partType === device.brokenPart); 
+        if (compatibleParts.length === 0) { 
+            showToast(`Нет запчастей для ${device.brokenPart}! Купи на рынке!`, "#e74c3c"); 
+            return; 
+        } 
+        let modal = document.createElement("div"); 
+        modal.className = "modal-overlay"; 
+        modal.innerHTML = `<div class="fullscreen-modal" style="max-width:400px;"><div class="fullscreen-header"><h3>🔧 РЕМОНТ ${device.model}</h3><button id="closeRepair" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div><div class="fullscreen-body"><p>Выбери запчасть для ремонта ${device.brokenPart}:</p>${compatibleParts.map(part => `<div class="offer-item" data-part-id="${part.id}" style="background:#f8f9fa;border-radius:20px;padding:12px;margin:8px 0;display:flex;justify-content:space-between;"><span>🔧 ${part.supplier} - ${part.price}₽</span><button class="repair-part-btn" style="background:#2ecc71;padding:6px 12px;border-radius:30px;border:none;color:white;">Починить</button></div>`).join('')}</div></div>`; 
+        document.body.appendChild(modal); 
+        document.querySelectorAll(".repair-part-btn").forEach((btn, i) => { 
+            btn.addEventListener("click", () => { 
+                const part = compatibleParts[i]; 
+                const partIndex = game.parts.findIndex(p => p.id === part.id); 
+                if (partIndex !== -1) game.parts.splice(partIndex, 1); 
+                game.inventory[idx].brokenPart = null; 
+                game.inventory[idx].condition = "Хорошее"; 
+                game.repairsDone++; 
+                showToast(`✅ ${device.model} отремонтирован!`, "#2ecc71"); 
+                addExp(20); 
+                addLog("🔧 РЕМОНТ", `${device.model} отремонтирован`); 
+                updateUI(); 
+                saveGame(); 
+                modal.remove(); 
+            }); 
+        }); 
+        document.getElementById("closeRepair").addEventListener("click", () => modal.remove()); 
+    }
+    
+    function showSellOffers(device, index) { 
+        let deviceData = DEVICES_DB.find(d => d.model === device.model); 
+        if (!deviceData) return; 
+        let baseValue = deviceData.base * COND_MOD[device.condition]; 
+        if (device.brokenPart) baseValue *= 0.5; 
+        let offers = []; 
+        for (let i = 0; i < 3; i++) { 
+            let price = Math.floor(baseValue * (0.6 + Math.random() * 0.7) * marketMultiplier); 
+            offers.push(price); 
+        } 
+        let modal = document.createElement("div"); 
+        modal.className = "modal-overlay"; 
+        modal.innerHTML = `<div class="offers-modal" style="max-width:340px;width:90%;background:white;border-radius:48px;padding:24px;"><h3>💰 Выбери предложение</h3>${offers.map((price, idx) => `<div class="offer-item" data-offer="${price}" style="background:#f8f9fa;border-radius:20px;padding:12px;margin:10px 0;display:flex;justify-content:space-between;align-items:center;"><div><strong>Перекуп ${idx + 1}</strong></div><div style="font-size:1.2rem;font-weight:bold;color:#e67e22;">${price.toLocaleString()} ₽</div></div>`).join('')}<button id="cancelOffer" class="close-btn">Отмена</button></div>`; 
+        document.body.appendChild(modal); 
+        document.querySelectorAll(".offer-item").forEach(el => { 
+            el.addEventListener("click", () => { 
+                let sellPrice = parseInt(el.dataset.offer); 
+                game.money += sellPrice; 
+                const profit = sellPrice - device.buyPrice; 
+                if (profit > 0) { 
+                    game.totalProfit += profit; 
+                    addExp(10); 
+                } 
+                game.inventory.splice(index, 1); 
+                game.totalSales++; 
+                showMoneyAnimation(sellPrice); 
+                addLog("💸 ПРОДАЖА", `${device.model} за ${sellPrice} ₽, прибыль: ${profit} ₽`); 
+                showToast(`💰 ПРОДАНО за ${sellPrice.toLocaleString()} ₽`, "#2ecc71"); 
+                updateUI(); 
+                saveGame(); 
+                modal.remove(); 
+            }); 
+        }); 
+        document.getElementById("cancelOffer").addEventListener("click", () => modal.remove()); 
+    }
+    
+    function renderInventory() { 
+        let container = document.getElementById("inventoryList"); 
+        if (!container) return; 
+        if (game.inventory.length === 0) { 
+            container.innerHTML = "<div style='text-align:center;padding:40px;opacity:0.6;'>📭 Нет устройств</div>"; 
+            return; 
+        } 
+        container.innerHTML = ""; 
+        game.inventory.forEach((device, idx) => { 
+            let div = document.createElement("div"); 
+            div.className = "phone-card"; 
+            div.style.borderLeftColor = COND_COLORS[device.condition]; 
+            div.innerHTML = `<div class="phone-info"><strong>📱 ${device.model}</strong><div class="condition-badge">${device.condition}${device.brokenPart ? ` 🔨 ${device.brokenPart}` : ""}</div><small>💰 ${device.buyPrice?.toLocaleString()}₽</small></div><div class="phone-actions"><button class="sell-btn">💰 ПРОДАТЬ</button>${device.brokenPart ? '<button class="repair-btn">🔧 РЕМОНТ</button>' : ''}</div>`; 
+            div.querySelector(".sell-btn").addEventListener("click", (e) => { e.stopPropagation(); showSellOffers(device, idx); }); 
+            if (device.brokenPart) div.querySelector(".repair-btn").addEventListener("click", (e) => { e.stopPropagation(); showRepairOptions(device, idx); }); 
+            container.appendChild(div); 
+        }); 
+    }
+    
+    function renderMarket() { 
+        let container = document.getElementById("marketGrid"); 
+        if (!container) return; 
+        container.innerHTML = ""; 
+        currentMarket.forEach(offer => { 
+            let card = document.createElement("div"); 
+            card.className = "market-item"; 
+            card.style.borderTop = `3px solid ${COND_COLORS[offer.condition]}`; 
+            card.innerHTML = `<div style="font-size:1.8rem;">${offer.icon}</div><div style="font-weight:bold;font-size:0.9rem;">${offer.model}</div><div style="font-size:0.65rem;">${offer.condition}</div><div class="price-tag">${offer.price.toLocaleString()} ₽</div><button class="buy-btn">💸 КУПИТЬ</button>`; 
+            card.querySelector(".buy-btn").addEventListener("click", (e) => { e.stopPropagation(); buyDevice(offer); }); 
+            container.appendChild(card); 
+        }); 
+    }
+    
+    function renderSpareMarket() { 
+        let container = document.getElementById("spareMarketGrid"); 
+        if (!container) return; 
+        container.innerHTML = ""; 
+        currentSpareMarket.forEach(part => { 
+            let card = document.createElement("div"); 
+            card.className = "market-item"; 
+            card.innerHTML = `<div style="font-size:1.5rem;">🔧</div><div style="font-weight:bold;font-size:0.8rem;">${part.partType}</div><div style="font-size:0.7rem;">для ${part.phoneModel}</div><div class="price-tag">${part.price.toLocaleString()} ₽</div><button class="buy-btn">💸 КУПИТЬ</button>`; 
+            card.querySelector(".buy-btn").addEventListener("click", (e) => { e.stopPropagation(); buySparePart(part); }); 
+            container.appendChild(card); 
+        }); 
+    }
+    
+    function updateUI() { 
+        document.getElementById("balance").innerText = Math.floor(game.money).toLocaleString(); 
+        renderInventory(); 
+        renderMarket(); 
+        renderSpareMarket(); 
+        updateExpUI(); 
+        updateMarketPrices();
+    }
     
     function showProfile() { 
         let modal = document.createElement("div"); 
         modal.className = "modal-overlay"; 
-        modal.innerHTML = `<div class="profile-content" style="max-width:340px;width:90%;background:white;border-radius:48px;padding:24px;"><div class="profile-header"><div style="font-size:4rem;background:linear-gradient(135deg,#f39c12,#e67e22);width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">👨‍💼</div><h2>${userNickname || "Мастер"}</h2><p>⭐ Уровень ${game.level} • ${game.totalSales} продаж</p>${isAdmin ? '<p style="color:#9b59b6;">👑 АДМИН</p>' : ''}</div><div class="profile-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><div class="stat-card" style="background:#f0f2f5;border-radius:20px;padding:10px;text-align:center;"><div class="stat-value">${Math.floor(game.money).toLocaleString()}₽</div><div class="stat-label">БАЛАНС</div></div><div class="stat-card" style="background:#f0f2f5;border-radius:20px;padding:10px;text-align:center;"><div class="stat-value">${game.totalProfit.toLocaleString()}₽</div><div class="stat-label">ПРИБЫЛЬ</div></div><div class="stat-card" style="background:#f0f2f5;border-radius:20px;padding:10px;text-align:center;"><div class="stat-value">${game.inventory.length}</div><div class="stat-label">УСТРОЙСТВ</div></div></div>${isAdmin ? '<button id="adminPanelBtn" class="admin-btn" style="width:100%;margin-top:12px;">👑 ОТКРЫТЬ АДМИН-ПАНЕЛЬ</button>' : ''}<button id="closeProfile" class="close-btn">ЗАКРЫТЬ</button></div>`; 
+        modal.innerHTML = `<div class="profile-content" style="max-width:340px;width:90%;background:white;border-radius:48px;padding:24px;"><div class="profile-header"><div style="font-size:4rem;background:linear-gradient(135deg,#f39c12,#e67e22);width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">👨‍💼</div><h2>${userNickname || "Мастер"}</h2><p>⭐ Уровень ${game.level} • ${game.totalSales} продаж</p></div><div class="profile-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><div class="stat-card" style="background:#f0f2f5;border-radius:20px;padding:10px;text-align:center;"><div class="stat-value">${Math.floor(game.money).toLocaleString()}₽</div><div class="stat-label">БАЛАНС</div></div><div class="stat-card" style="background:#f0f2f5;border-radius:20px;padding:10px;text-align:center;"><div class="stat-value">${game.totalProfit.toLocaleString()}₽</div><div class="stat-label">ПРИБЫЛЬ</div></div><div class="stat-card" style="background:#f0f2f5;border-radius:20px;padding:10px;text-align:center;"><div class="stat-value">${game.inventory.length}</div><div class="stat-label">УСТРОЙСТВ</div></div></div><button id="closeProfile" class="close-btn">ЗАКРЫТЬ</button></div>`; 
         document.body.appendChild(modal); 
-        if (isAdmin) document.getElementById("adminPanelBtn")?.addEventListener("click", () => { modal.remove(); showAdminPanel(); }); 
         document.getElementById("closeProfile").addEventListener("click", () => modal.remove()); 
     }
-    function resetGameWithConfirm() { let modal = document.createElement("div"); modal.className = "modal-overlay"; modal.innerHTML = `<div class="offers-modal" style="max-width:340px;"><h2>⚠️ ВНИМАНИЕ!</h2><p>Сбросить прогресс?</p><div style="display:flex;gap:12px;margin-top:20px;"><button id="confirmReset" style="background:#e74c3c;flex:1;padding:12px;border-radius:40px;">ДА</button><button id="cancelReset" style="background:#95a5a6;flex:1;padding:12px;border-radius:40px;">НЕТ</button></div></div>`; document.body.appendChild(modal); document.getElementById("confirmReset").addEventListener("click", () => { resetGame(); modal.remove(); }); document.getElementById("cancelReset").addEventListener("click", () => modal.remove()); }
-    function resetGame() { game = { money: 5000, exp: 0, level: 1, inventory: [{ model: "iPhone 6", condition: "Бит экран", buyPrice: 1800, brokenPart: "Экран" }], parts: [], totalSales: 0, totalProfit: 0, discount: 0 }; usedCodes.clear(); friendsList = []; isAdmin = false; recalcLevel(); currentMarket = generateMarket(); currentSpareMarket = generateSpareMarket(); updateUI(); showToast("Прогресс сброшен!", "#e74c3c"); saveGame(); saveFriends(); }
+    
+    function resetGameWithConfirm() { 
+        let modal = document.createElement("div"); 
+        modal.className = "modal-overlay"; 
+        modal.innerHTML = `<div class="offers-modal" style="max-width:340px;"><h2>⚠️ ВНИМАНИЕ!</h2><p>Сбросить прогресс?</p><div style="display:flex;gap:12px;margin-top:20px;"><button id="confirmReset" style="background:#e74c3c;flex:1;padding:12px;border-radius:40px;">ДА</button><button id="cancelReset" style="background:#95a5a6;flex:1;padding:12px;border-radius:40px;">НЕТ</button></div></div>`; 
+        document.body.appendChild(modal); 
+        document.getElementById("confirmReset").addEventListener("click", () => { resetGame(); modal.remove(); }); 
+        document.getElementById("cancelReset").addEventListener("click", () => modal.remove()); 
+    }
+    
+    function resetGame() { 
+        game = { money: 5000, exp: 0, level: 1, inventory: [{ model: "iPhone 6", condition: "Бит экран", buyPrice: 1800, brokenPart: "Экран" }], parts: [], totalSales: 0, totalProfit: 0, discount: 0, repairsDone: 0 }; 
+        usedCodes.clear(); 
+        friendsList = []; 
+        recalcLevel(); 
+        currentMarket = generateMarket(); 
+        currentSpareMarket = generateSpareMarket(); 
+        updateUI(); 
+        showToast("Прогресс сброшен!", "#e74c3c"); 
+        saveGame(); 
+        saveFriends(); 
+    }
     
     function showDailyModal() { showToast("📅 Ежедневные задания скоро!", "#f39c12"); }
-    function showPassModal() { showToast("🎫 Перекуп Pass скоро!", "#f39c12"); }
-    function showShopModal() { showToast("💰 Магазин скоро!", "#f39c12"); }
     
-    function initDrawer() { let overlay = document.getElementById("drawerOverlay"); let drawer = document.getElementById("drawerMenu"); document.getElementById("menuBtn").addEventListener("click", () => { overlay.style.display = "block"; drawer.classList.add("open"); }); overlay.addEventListener("click", () => { overlay.style.display = "none"; drawer.classList.remove("open"); }); document.querySelectorAll(".drawer-item").forEach(item => { item.addEventListener("click", () => { overlay.style.display = "none"; drawer.classList.remove("open"); let action = item.dataset.action; if (action === "daily") showDailyModal(); if (action === "pass") showPassModal(); if (action === "shop") showShopModal(); if (action === "codes") showCodesModal(); if (action === "theme") { document.body.classList.toggle("dark"); saveGame(); addLog("🎨 ТЕМА", `Тема изменена на ${document.body.classList.contains("dark") ? "тёмную" : "светлую"}`); } if (action === "reset") resetGameWithConfirm(); }); }); }
-    function initTabs() { document.querySelectorAll(".tab-btn").forEach(btn => { btn.addEventListener("click", () => { let tab = btn.dataset.tab; document.querySelectorAll(".section").forEach(sec => sec.classList.remove("active")); document.getElementById(`${tab}Section`).classList.add("active"); document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active")); btn.classList.add("active"); if (tab === "market") { currentMarket = generateMarket(); renderMarket(); } if (tab === "spareMarket") { currentSpareMarket = generateSpareMarket(); renderSpareMarket(); } }); }); }
+    function initDrawer() { 
+        let overlay = document.getElementById("drawerOverlay"); 
+        let drawer = document.getElementById("drawerMenu"); 
+        document.getElementById("menuBtn").addEventListener("click", () => { overlay.style.display = "block"; drawer.classList.add("open"); }); 
+        overlay.addEventListener("click", () => { overlay.style.display = "none"; drawer.classList.remove("open"); }); 
+        document.querySelectorAll(".drawer-item").forEach(item => { 
+            item.addEventListener("click", () => { 
+                overlay.style.display = "none"; 
+                drawer.classList.remove("open"); 
+                let action = item.dataset.action; 
+                if (action === "daily") showDailyModal(); 
+                if (action === "achivements") showAchievementsModal(); 
+                if (action === "customize") showCustomizeModal(); 
+                if (action === "codes") showCodesModal(); 
+                if (action === "theme") { document.body.classList.toggle("dark"); saveGame(); addLog("🎨 ТЕМА", `Тема изменена на ${document.body.classList.contains("dark") ? "тёмную" : "светлую"}`); } 
+                if (action === "reset") resetGameWithConfirm(); 
+            }); 
+        }); 
+    }
+    
+    function initTabs() { 
+        document.querySelectorAll(".tab-btn").forEach(btn => { 
+            btn.addEventListener("click", () => { 
+                let tab = btn.dataset.tab; 
+                document.querySelectorAll(".section").forEach(sec => sec.classList.remove("active")); 
+                document.getElementById(`${tab}Section`).classList.add("active"); 
+                document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active")); 
+                btn.classList.add("active"); 
+                if (tab === "market") { currentMarket = generateMarket(); renderMarket(); } 
+                if (tab === "spareMarket") { currentSpareMarket = generateSpareMarket(); renderSpareMarket(); } 
+                if (tab === "games") { document.getElementById("gamesList").innerHTML = `<div style="text-align:center;padding:40px;">🎮 Нажми на кнопку "ИГРЫ" в верхней панели</div>`; } 
+            }); 
+        }); 
+    }
     
     function showNicknameModal() { 
         let modal = document.createElement("div"); 
         modal.className = "modal-overlay"; 
-        modal.innerHTML = `<div class="welcome-modal">
+        modal.innerHTML = `<div class="welcome-modal" style="max-width:340px;width:90%;background:white;border-radius:48px;padding:24px;text-align:center;">
             <h2>👋 Добро пожаловать в iDealer Pro!</h2>
             <p>Как тебя зовут, будущий перекуп?</p>
-            <input type="text" id="nickInput" class="welcome-input" placeholder="Твой никнейм" maxlength="20" autocomplete="off">
-            <button id="saveNickBtn" class="welcome-btn">🚀 СТАТЬ ПЕРЕКУПОМ</button>
+            <input type="text" id="nickInput" class="code-input" placeholder="Твой никнейм" maxlength="20" autocomplete="off" style="width:100%;margin:16px 0;">
+            <button id="saveNickBtn" class="welcome-btn" style="background:#2ecc71;width:100%;padding:14px;border-radius:60px;border:none;color:white;font-weight:bold;">🚀 СТАТЬ ПЕРЕКУПОМ</button>
         </div>`; 
         document.body.appendChild(modal); 
         const input = document.getElementById("nickInput");
         input.focus();
-        document.getElementById("saveNickBtn").addEventListener("click", async () => { 
+        document.getElementById("saveNickBtn").addEventListener("click", () => { 
             let nick = document.getElementById("nickInput").value.trim(); 
             if (!nick) {
                 showToast("❌ Введи никнейм!", "#e74c3c");
@@ -696,10 +964,10 @@
             currentSpareMarket = generateSpareMarket(); 
             updateUI(); 
             loadFriends(); 
-            loadLogs();
-            await loadGlobalSettings();
+            loadAchievements();
+            loadGuilds();
         }); 
-        input.addEventListener("keypress", async (e) => {
+        input.addEventListener("keypress", (e) => {
             if (e.key === "Enter") {
                 let nick = input.value.trim();
                 if (nick) {
@@ -710,8 +978,8 @@
                     currentSpareMarket = generateSpareMarket();
                     updateUI();
                     loadFriends();
-                    loadLogs();
-                    await loadGlobalSettings();
+                    loadAchievements();
+                    loadGuilds();
                 } else {
                     showToast("❌ Введи никнейм!", "#e74c3c");
                 }
@@ -727,8 +995,8 @@
         currentSpareMarket = generateSpareMarket(); 
         updateUI(); 
         loadFriends(); 
-        loadLogs();
-        loadGlobalSettings();
+        loadAchievements();
+        loadGuilds();
         fetchLeaderboard(true);
     }
     initTabs(); 
@@ -736,6 +1004,80 @@
     document.getElementById("profileBtn").addEventListener("click", showProfile);
     document.getElementById("leaderboardBtn").addEventListener("click", showGlobalLeaderboardModal);
     document.getElementById("friendsBtn").addEventListener("click", showFriendsModal);
+    document.getElementById("guildBtn").addEventListener("click", showGuildsModal);
+    
+    window.addEventListener("load", () => {
+        document.getElementById("gamesSection").innerHTML = `<div class="games-grid" style="display:flex;flex-direction:column;gap:16px;">
+            <div class="game-card" data-game="casino" style="background:#f8f9fa;border-radius:20px;padding:20px;text-align:center;cursor:pointer;">
+                <div class="game-icon" style="font-size:3rem;">🎰</div>
+                <strong>КАЗИНО</strong>
+                <p>Удвой свои деньги!</p>
+            </div>
+            <div class="game-card" data-game="guess" style="background:#f8f9fa;border-radius:20px;padding:20px;text-align:center;cursor:pointer;">
+                <div class="game-icon" style="font-size:3rem;">🔮</div>
+                <strong>УГАДАЙ ЦЕНУ</strong>
+                <p>Угадай цену телефона и выиграй!</p>
+            </div>
+            <div class="game-card" data-game="assemble" style="background:#f8f9fa;border-radius:20px;padding:20px;text-align:center;cursor:pointer;">
+                <div class="game-icon" style="font-size:3rem;">🔧</div>
+                <strong>СОБЕРИ IPHONE</strong>
+                <p>Собери телефон из деталей!</p>
+            </div>
+        </div>`;
+        document.querySelectorAll("#gamesSection .game-card").forEach(card => {
+            card.addEventListener("click", () => {
+                const gameType = card.dataset.game;
+                if (gameType === "casino") {
+                    let bet = prompt("Сколько ставишь? (от 100 до 10000)", "1000");
+                    if (bet) {
+                        bet = parseInt(bet);
+                        if (bet > game.money) showToast("❌ Не хватает денег!", "#e74c3c");
+                        else {
+                            const win = Math.random() < 0.45;
+                            if (win) {
+                                game.money += bet;
+                                showToast(`🎰 ВЫ ВЫИГРАЛИ! +${bet} ₽`, "#2ecc71");
+                                addLog("🎰 КАЗИНО", `Выиграл ${bet} ₽`);
+                            } else {
+                                game.money -= bet;
+                                showToast(`🎰 ВЫ ПРОИГРАЛИ! -${bet} ₽`, "#e74c3c");
+                                addLog("🎰 КАЗИНО", `Проиграл ${bet} ₽`);
+                            }
+                            updateUI();
+                            saveGame();
+                        }
+                    }
+                }
+                if (gameType === "guess") {
+                    const devices = ["iPhone 15 Pro", "MacBook Pro", "Apple Vision Pro"];
+                    const prices = [85000, 150000, 300000];
+                    const idx = Math.floor(Math.random() * devices.length);
+                    const guess = prompt(`Сколько стоит ${devices[idx]}? (введите число)`, "0");
+                    if (guess) {
+                        const diff = Math.abs(parseInt(guess) - prices[idx]);
+                        if (diff < 5000) {
+                            const winAmount = 25000;
+                            game.money += winAmount;
+                            showToast(`🔮 Правильно! +${winAmount} ₽`, "#2ecc71");
+                            addLog("🔮 УГАДАЙ", `Выиграл ${winAmount} ₽, цена была ${prices[idx]}`);
+                        } else if (diff < 15000) {
+                            const winAmount = 5000;
+                            game.money += winAmount;
+                            showToast(`🔮 Близко! +${winAmount} ₽`, "#f39c12");
+                            addLog("🔮 УГАДАЙ", `Выиграл ${winAmount} ₽, цена была ${prices[idx]}`);
+                        } else {
+                            showToast(`🔮 Не угадал! Правильная цена: ${prices[idx]} ₽`, "#e74c3c");
+                        }
+                        updateUI();
+                        saveGame();
+                    }
+                }
+                if (gameType === "assemble") {
+                    showToast("🔧 Собери iPhone из деталей (скоро будет)", "#f39c12");
+                }
+            });
+        });
+    });
 </script>
 </body>
 </html>
